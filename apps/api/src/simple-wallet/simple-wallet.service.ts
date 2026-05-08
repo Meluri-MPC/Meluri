@@ -65,7 +65,6 @@ export class SimpleWalletService {
       memo: '',
       publicKey: wallet.publicKey,
       network: network as any,
-      fee: 0n,
       sponsored: true,
     });
 
