@@ -75,12 +75,13 @@ export class MpcTurnkey {
     if (!container) {
       container = document.createElement('div');
       container.id = 'meluri-turnkey-container';
-      container.style.display = 'none';
+      container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
       document.body.appendChild(container);
     }
 
     const stamper = new IframeStamper({ iframeUrl: TK_IFRAME_URL, iframeElementId: IFRAME_ID, iframeContainer: container });
     await stamper.init();
+    container.style.display = 'none';
     this.client = new TurnkeyClient({ baseUrl: 'https://api.turnkey.com' }, stamper);
     return this.client;
   }
