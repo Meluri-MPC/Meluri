@@ -10,10 +10,11 @@ export class RelayerService {
   constructor(private config: ConfigService) {
     const paymasterUrl = this.config.get<string>('VELUMX_RELAYER_URL', 'https://api.velumx.xyz/api/v1');
     const apiKey = this.config.get<string>('VELUMX_RELAYER_API_KEY');
+    const network = this.config.get<string>('VELUMX_NETWORK', 'testnet') as 'mainnet' | 'testnet';
 
     this.velumx = new VelumXClient({
       paymasterUrl,
-      network: 'mainnet',
+      network,
       ...(apiKey ? { apiKey } : {}),
     });
   }
@@ -24,7 +25,7 @@ export class RelayerService {
   ): Promise<{ txid: string; status: string }> {
     const result = await this.velumx.sponsor(signedTxHex, {
       userId: options?.userId,
-      network: options?.network || 'mainnet',
+      network: (options?.network || this.config.get<string>('VELUMX_NETWORK', 'testnet')) as 'mainnet' | 'testnet',
     });
 
     this.logger.log(`Sponsored tx ${result.txid} via VelumX`);
