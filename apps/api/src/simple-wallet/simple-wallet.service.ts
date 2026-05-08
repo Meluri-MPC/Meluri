@@ -71,7 +71,7 @@ export class SimpleWalletService {
 
     const signer = new TransactionSigner(tx);
     signer.signOrigin(wallet.privateKey);
-    const signedHex = Buffer.from(tx.serialize()).toString('hex');
+    const signedHex = tx.serialize();
 
     const result = await this.relayer.sponsorTransaction(signedHex, {
       userId,
