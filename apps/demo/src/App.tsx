@@ -26,7 +26,8 @@ export default function App() {
     try {
       const res = await fetch(`https://api.testnet.hiro.so/extended/v1/address/${address}/balances`);
       const data = await res.json();
-      setBalance(data?.stx?.balance || '0');
+      const raw = data?.stx?.balance || '0';
+      setBalance((Number(raw) / 1_000_000).toString());
     } catch {
       setBalance('0');
     }
@@ -82,7 +83,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/wallets/simple/send-tx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId.trim(), recipient: sendRecipient.trim(), amount: Number(sendAmount) }),
+        body: JSON.stringify({ userId: userId.trim(), recipient: sendRecipient.trim(), amount: Math.round(Number(sendAmount) * 1_000_000) }),
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data = await res.json();
@@ -155,7 +156,7 @@ export default function App() {
               </div>
               <div className="input-group">
                 <label>Amount (microSTX)</label>
-                <input className="input" type="number" placeholder="1000000 = 1 STX" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} />
+                <input className="input" type="number" placeholder="1.0 = 1 STX" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} />
               </div>
               <button className="btn btn-primary" type="submit" disabled={sending || !sendRecipient || !sendAmount}>
                 {sending ? 'Sending...' : 'Send STX'}
