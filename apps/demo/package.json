@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@meluri/mpc": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

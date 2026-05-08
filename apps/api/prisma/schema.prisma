@@ -109,3 +109,14 @@ model MpcTransaction {
   @@index([walletId])
   @@index([txid])
 }
+
+model SimpleWallet {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  stxAddress String   @unique
+  publicKey  String   @unique
+  privateKey String
+  network    String   @default("testnet")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

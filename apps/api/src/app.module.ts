@@ -8,6 +8,7 @@ import { IndexingModule } from './indexing/indexing.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { RelayerModule } from './relayer/relayer.module';
 import { SessionModule } from './session/session.module';
+import { SimpleWalletModule } from './simple-wallet/simple-wallet.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { AppController } from './app.controller';
     TransactionModule,
     RelayerModule,
     SessionModule,
+    SimpleWalletModule,
   ],
   controllers: [AppController],
 })
