@@ -5,6 +5,7 @@ import * as secp from '@noble/secp256k1';
 import {
   makeUnsignedSTXTokenTransfer,
   publicKeyToAddress,
+  TransactionSigner,
 } from '@stacks/transactions';
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import * as crypto from 'crypto';
@@ -68,29 +69,10 @@ export class SimpleWalletService {
       sponsored: true,
     });
 
-    const sigHash = tx.signBegin();
-    tx.signNextOrigin(sigHash, wallet.privateKey);
+    const signer = new TransactionSigner(tx);
+    signer.signOrigin(wallet.privateKey);
     const signedHex = tx.serialize();
 
-    // Try broadcasting directly to Stacks testnet first (bypass VelumX for debugging)
-    try {
-      const bn = await fetch('https://api.testnet.hiro.so/v2/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tx: signedHex, attachment: '0x' }),
-      });
-      const bnResult = await bn.json();
-      if (bn.ok) {
-        this.logger.log(`Direct broadcast: ${bnResult}`);
-        const bnTxid = typeof bnResult === 'string' ? bnResult : (bnResult as any).txid || JSON.stringify(bnResult);
-        return { txid: bnTxid, status: 'broadcast' };
-      }
-      this.logger.warn(`Direct broadcast failed: ${JSON.stringify(bnResult)}`);
-    } catch (e: any) {
-      this.logger.warn(`Direct broadcast error: ${e.message}`);
-    }
-
-    // Fallback to VelumX
     const result = await this.relayer.sponsorTransaction(signedHex, {
       userId,
       network: wallet.network as 'mainnet' | 'testnet',
