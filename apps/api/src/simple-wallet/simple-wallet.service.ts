@@ -65,11 +65,12 @@ export class SimpleWalletService {
 
     const txBytes = tx.serializeBytes();
     const txHash = crypto.createHash('sha256').update(txBytes).digest();
-    const sig = await secp.sign(txHash, wallet.privateKey);
+    const sig = secp.sign(txHash, wallet.privateKey, { lowS: true });
     const compact = sig.toCompactRawBytes();
     const r = Buffer.from(compact.slice(0, 32));
     const s = Buffer.from(compact.slice(32, 64));
-    const signed = Buffer.concat([Buffer.from(txBytes), r, s, Buffer.from([0x01])]);
+    const recovery = Buffer.from([sig.recovery ?? 0]);
+    const signed = Buffer.concat([Buffer.from(txBytes), r, s, recovery]);
 
     const result = await this.relayer.sponsorTransaction(signed.toString('hex'), {
       userId,
