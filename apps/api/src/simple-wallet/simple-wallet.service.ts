@@ -6,6 +6,7 @@ import {
   makeUnsignedSTXTokenTransfer,
   publicKeyToAddress,
   TransactionSigner,
+  privateKeyToPublic,
 } from '@stacks/transactions';
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import * as crypto from 'crypto';
@@ -30,7 +31,7 @@ export class SimpleWalletService {
     if (existing) return { stxAddress: existing.stxAddress, publicKey: existing.publicKey };
 
     const privKey = crypto.randomBytes(32).toString('hex');
-    const pubKey = Buffer.from(secp.getPublicKey(privKey, true)).toString('hex');
+    const pubKey = Buffer.from(privateKeyToPublic(privKey)).toString('hex');
     const stxAddress = publicKeyToAddress(pubKey, network === 'mainnet' ? 'mainnet' : 'testnet');
 
     await this.prisma.simpleWallet.create({
