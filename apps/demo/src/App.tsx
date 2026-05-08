@@ -16,16 +16,17 @@ function createAuth(): MeluriMPCAuth {
   return {
     async login() {
       const clerk = getClerk();
+      if (!clerk) throw new Error('Clerk not loaded');
       if (!clerk.user) await clerk.openSignIn();
       return { userId: clerk.user.id, sessionToken: await clerk.session?.getToken() ?? '' };
     },
     async logout() {
       const clerk = getClerk();
-      if (clerk.user) await clerk.signOut();
+      if (clerk?.user) await clerk.signOut();
     },
     async getSession() {
       const clerk = getClerk();
-      if (!clerk.user) return { userId: '', sessionToken: '' };
+      if (!clerk?.user) return { userId: '', sessionToken: '' };
       return { userId: clerk.user.id, sessionToken: await clerk.session?.getToken() ?? '' };
     },
   };
@@ -123,7 +124,7 @@ export default function App() {
     if (document.getElementById('clerk-script')) return;
     const script = document.createElement('script');
     script.id = 'clerk-script';
-    script.src = 'https://js.clerk.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+    script.src = 'https://glad-hen-88.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
     script.async = true;
     script.crossOrigin = 'anonymous';
     script.setAttribute('data-clerk-publishable-key', CLERK_KEY);
