@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Developer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  apiKeys   ApiKey[]
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  developerId String
+  developer   Developer @relation(fields: [developerId], references: [id])
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String
+  status      String   @default("Active")
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  mpcOrg      MpcOrganization?
+
+  @@index([developerId])
+  @@index([keyHash])
+}
+
+model MpcOrganization {
+  id                  String   @id @default(cuid())
+  apiKeyId            String   @unique
+  apiKey              ApiKey   @relation(fields: [apiKeyId], references: [id])
+  turnkeyOrgId        String   @unique
+  appName             String
+  allowedDomains      String[]
+  allowedAuthMethods  String[] @default(["google", "email"])
+  walletCount         Int      @default(0)
+  txCount             Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  wallets             MpcWallet[]
+}
+
+model MpcWallet {
+  id              String        @id @default(cuid())
+  orgId           String
+  organization    MpcOrganization @relation(fields: [orgId], references: [id])
+  userId          String
+  stxAddress      String        @unique
+  publicKey       String        @unique
+  turnkeyWalletId String        @unique
+  network         String        @default("mainnet")
+  lastSyncedAt    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  balances        MpcBalance[]
+  transactions    MpcTransaction[]
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([stxAddress])
+}
+
+model MpcBalance {
+  id              String    @id @default(cuid())
+  walletId        String
+  wallet          MpcWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  assetType       String
+  contractAddress String?
+  symbol          String?
+  name            String?
+  decimals        Int       @default(6)
+  balance         String
+  tokenId         String?
+  metadataUri     String?
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([walletId, assetType, contractAddress, tokenId])
+  @@index([walletId])
+}
+
+model MpcTransaction {
+  id             String    @id @default(cuid())
+  walletId       String
+  wallet         MpcWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  txid           String
+  type           String
+  fromAddress    String
+  toAddress      String?
+  amount         String?
+  assetSymbol    String?
+  assetPrincipal String?
+  status         String    @default("pending")
+  blockHeight    Int?
+  network        String    @default("mainnet")
+  sponsored      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  confirmedAt    DateTime?
+
+  @@unique([walletId, txid])
+  @@index([walletId])
+  @@index([txid])
+}

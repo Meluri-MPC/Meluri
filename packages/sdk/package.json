@@ -1,0 +1,40 @@
+{
+  "name": "@meluri/mpc",
+  "version": "0.1.0",
+  "description": "Meluri MPC SDK — Stacks-native embedded wallet. Like Privy for Stacks.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/secp256k1": "^2.2.0",
+    "@stacks/encryption": "^7.4.0",
+    "@stacks/network": "^7.3.1",
+    "@stacks/transactions": "^7.4.0",
+    "@turnkey/http": "^4.0.0",
+    "@turnkey/iframe-stamper": "^2.11.0"
+  },
+  "peerDependencies": {
+    "@clerk/clerk-js": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.40",
+    "typescript": "^5.4.0"
+  },
+  "keywords": [
+    "stacks",
+    "mpc",
+    "wallet",
+    "embedded",
+    "web3",
+    "meluri"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-meluri-50: #f0f4ff;
+  --color-meluri-100: #dbe4ff;
+  --color-meluri-200: #bac8ff;
+  --color-meluri-300: #91a7ff;
+  --color-meluri-400: #748ffc;
+  --color-meluri-500: #5c7cfa;
+  --color-meluri-600: #4c6ef5;
+  --color-meluri-700: #4263eb;
+  --color-meluri-800: #3b5bdb;
+  --color-meluri-900: #364fc7;
+}
+
+body {
+  @apply bg-gray-950 text-gray-100 antialiased;
+}

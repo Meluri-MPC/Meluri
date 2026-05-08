@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: meluri
+      POSTGRES_PASSWORD: meluri
+      POSTGRES_DB: meluri_mpc
+    ports:
+      - "5434:5432"
+    volumes:
+      - meluri_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6381:6379"
+
+volumes:
+  meluri_pgdata:
