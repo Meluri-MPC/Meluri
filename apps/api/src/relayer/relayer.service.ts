@@ -25,7 +25,7 @@ export class RelayerService {
   ): Promise<{ txid: string; status: string }> {
     const result = await this.velumx.sponsor(signedTxHex, {
       userId: options?.userId,
-      network: (options?.network || this.config.get<string>('VELUMX_NETWORK', 'testnet')) as 'mainnet' | 'testnet',
+      network: options?.network || (this.config.get<string>('VELUMX_NETWORK', 'testnet') as 'mainnet' | 'testnet'),
     });
 
     this.logger.log(`Sponsored tx ${result.txid} via VelumX`);
