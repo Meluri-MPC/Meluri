@@ -1,5 +1,4 @@
-import { MeluriMPCConfig, MPCWallet, AssetBalances, SendSTXParams, SendTokenParams, SendNFTParams, TransactionRecord, TokenBalance } from './types';
-import { MpcAuth } from './auth';
+import { MeluriMPCConfig, MeluriMPCAuth, MPCWallet, AssetBalances, SendSTXParams, SendTokenParams, SendNFTParams, TransactionRecord, TokenBalance } from './types';
 import { MpcTurnkey } from './turnkey';
 import { MpcWalletApi } from './wallet';
 import { MpcSigning } from './signing';
@@ -8,7 +7,7 @@ import { publicKeyToAddress } from '@stacks/transactions';
 
 export class MeluriMPC {
   private backendUrl: string;
-  private auth: MpcAuth;
+  private auth: MeluriMPCAuth;
   private turnkey: MpcTurnkey;
   private wallet: MpcWalletApi;
   private signing: MpcSigning;
@@ -17,7 +16,7 @@ export class MeluriMPC {
 
   constructor(private config: MeluriMPCConfig) {
     this.backendUrl = config.backendUrl || 'https://api.meluri.xyz/api/v1';
-    this.auth = new MpcAuth(config.clerkPublishableKey);
+    this.auth = config.auth;
     this.turnkey = new MpcTurnkey();
     this.session = new MpcSession(this.turnkey);
     this.wallet = new MpcWalletApi(this.backendUrl, config.apiKey);

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { MeluriMPC, type MPCWallet } from '@meluri/mpc';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { MeluriMPC, type MeluriMPCAuth, type MPCWallet } from '@meluri/mpc';
 
 const API_KEY = 'ml_f0c3da33e3fe08583ef8ec79c8e899b58aa0f0894cecf5d4d01500051b9cbc0a';
 const BACKEND_URL = 'https://meluri.onrender.com/api/v1';
@@ -8,9 +8,32 @@ const NETWORK = 'testnet' as const;
 
 let meluri: MeluriMPC | null = null;
 
+function getClerk(): any {
+  return (window as any).Clerk;
+}
+
+function createAuth(): MeluriMPCAuth {
+  return {
+    async login() {
+      const clerk = getClerk();
+      if (!clerk.user) await clerk.openSignIn();
+      return { userId: clerk.user.id, sessionToken: await clerk.session?.getToken() ?? '' };
+    },
+    async logout() {
+      const clerk = getClerk();
+      if (clerk.user) await clerk.signOut();
+    },
+    async getSession() {
+      const clerk = getClerk();
+      if (!clerk.user) return { userId: '', sessionToken: '' };
+      return { userId: clerk.user.id, sessionToken: await clerk.session?.getToken() ?? '' };
+    },
+  };
+}
+
 function getMeluri() {
   if (!meluri) {
-    meluri = new MeluriMPC({ apiKey: API_KEY, network: NETWORK, backendUrl: BACKEND_URL, clerkPublishableKey: CLERK_KEY });
+    meluri = new MeluriMPC({ apiKey: API_KEY, auth: createAuth(), network: NETWORK, backendUrl: BACKEND_URL });
   }
   return meluri;
 }
@@ -95,7 +118,7 @@ export default function App() {
     }
   }, [sendRecipient, sendAmount]);
 
-  // Init clerk on mount
+  // Init Clerk on mount
   useEffect(() => {
     if (document.getElementById('clerk-script')) return;
     const script = document.createElement('script');
@@ -103,21 +126,20 @@ export default function App() {
     script.src = 'https://js.clerk.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
     script.async = true;
     script.crossOrigin = 'anonymous';
+    script.setAttribute('data-clerk-publishable-key', CLERK_KEY);
     script.onload = async () => {
       const Clerk = (window as any).Clerk;
       if (Clerk) {
         await Clerk.load();
-        const w = getMeluri();
-        try {
-          const s = await w['auth'].getSession();
-          if (s) {
-            const wallet = await w.getWallet();
-            setWallet(wallet);
-            await refreshBalance(wallet);
-            const ss = w.getSessionStatus();
+        if (Clerk.user) {
+          try {
+            const w = await getMeluri().getWallet();
+            setWallet(w);
+            await refreshBalance(w);
+            const ss = getMeluri().getSessionStatus();
             if (ss) setSession(ss as any);
-          }
-        } catch {}
+          } catch {}
+        }
       }
       setLoading(false);
     };

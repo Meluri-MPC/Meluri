@@ -1,8 +1,14 @@
+export interface MeluriMPCAuth {
+  getSession(): Promise<{ userId: string; sessionToken: string }>;
+  login(): Promise<{ userId: string; sessionToken: string }>;
+  logout(): Promise<void>;
+}
+
 export interface MeluriMPCConfig {
   apiKey: string;
+  auth: MeluriMPCAuth;
   network?: 'mainnet' | 'testnet';
   backendUrl?: string;
-  clerkPublishableKey?: string;
 }
 
 export interface MPCWallet {

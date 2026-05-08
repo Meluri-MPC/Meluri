@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-js": "^5.0.0",
     "@meluri/mpc": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -10,7 +10,6 @@
   ],
   "scripts": {
     "build": "tsc",
-    "build:browser": "esbuild src/index.ts --bundle --format=iife --global-name=MeluriMPC --outfile=dist/meluri-mpc.browser.js --platform=browser --external:@clerk/clerk-js",
     "dev": "tsc --watch",
     "lint": "tsc --noEmit"
   },
@@ -21,9 +20,6 @@
     "@stacks/transactions": "^7.4.0",
     "@turnkey/http": "^4.0.0",
     "@turnkey/iframe-stamper": "^2.11.0"
-  },
-  "peerDependencies": {
-    "@clerk/clerk-js": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.40",
