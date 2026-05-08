@@ -7,6 +7,7 @@
     "build": "pnpm --filter @meluri/api build && pnpm --filter @meluri/mpc build",
     "sdk:dev": "pnpm --filter @meluri/mpc dev",
     "dashboard:dev": "pnpm --filter @meluri/dashboard dev",
+    "demo:dev": "pnpm --filter @meluri/demo dev",
     "db:migrate": "pnpm --filter @meluri/api db:migrate",
     "db:generate": "pnpm --filter @meluri/api db:generate",
     "db:studio": "pnpm --filter @meluri/api db:studio"

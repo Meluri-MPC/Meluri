@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:browser": "esbuild src/index.ts --bundle --format=iife --global-name=MeluriMPC --outfile=dist/meluri-mpc.browser.js --platform=browser --external:@clerk/clerk-js",
     "dev": "tsc --watch",
     "lint": "tsc --noEmit"
   },
