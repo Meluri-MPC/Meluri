@@ -9,6 +9,13 @@ import {
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import * as crypto from 'crypto';
 
+// Noble secp256k1 v2 requires explicit HMAC init
+secp.etc.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
+  const h = crypto.createHmac('sha256', Buffer.from(key));
+  for (const msg of msgs) h.update(Buffer.from(msg));
+  return h.digest();
+};
+
 @Injectable()
 export class SimpleWalletService {
   private readonly logger = new Logger(SimpleWalletService.name);
