@@ -56,24 +56,19 @@ export default function App() {
 
   const handleLogin = useCallback(async () => {
     clearMessages();
-    setLoading(true);
-    try {
-      const w = await getMeluri().login();
-      setWallet(w);
-      await refreshBalance(w);
-    } catch (e: any) {
-      setError(e.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    const clerk = (window as any).Clerk;
+    if (!clerk) return setError('Clerk not loaded');
+    await clerk.openSignIn({ afterSignInUrl: window.location.href, afterSignUpUrl: window.location.href });
   }, []);
 
   const handleLogout = useCallback(async () => {
-    await getMeluri().logout();
+    const clerk = (window as any).Clerk;
+    if (clerk?.user) await clerk.signOut();
     setWallet(null);
     setBalance({ stx: '0', tokens: [] });
     setSession(null);
     setLastTxid('');
+    meluri = null;
   }, []);
 
   const refreshBalance = async (w?: MPCWallet) => {
@@ -119,35 +114,34 @@ export default function App() {
     }
   }, [sendRecipient, sendAmount]);
 
-  // Init Clerk on mount
+  // Init Clerk on mount — restores session after OAuth redirect
   useEffect(() => {
     if (document.getElementById('clerk-script')) return;
     const script = document.createElement('script');
     script.id = 'clerk-script';
-    script.src = 'https://glad-hen-88.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+    script.src = `https://glad-hen-88.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js`;
     script.async = true;
     script.crossOrigin = 'anonymous';
     script.setAttribute('data-clerk-publishable-key', CLERK_KEY);
     script.onload = async () => {
       const Clerk = (window as any).Clerk;
-      if (Clerk) {
-        await Clerk.load();
-        if (Clerk.user) {
-          try {
-            const w = await getMeluri().getWallet();
-            setWallet(w);
-            await refreshBalance(w);
-            const ss = getMeluri().getSessionStatus();
-            if (ss) setSession(ss as any);
-          } catch {}
+      if (!Clerk) { setError('Clerk failed to load'); setLoading(false); return; }
+      await Clerk.load();
+      if (Clerk.user) {
+        try {
+          setLoading(true);
+          const w = await getMeluri().getWallet();
+          setWallet(w);
+          await refreshBalance(w);
+          const ss = getMeluri().getSessionStatus();
+          if (ss) setSession(ss as any);
+        } catch (e: any) {
+          setError(e.message || 'Failed to load wallet');
         }
       }
       setLoading(false);
     };
-    script.onerror = () => {
-      setError('Failed to load Clerk');
-      setLoading(false);
-    };
+    script.onerror = () => { setError('Failed to load Clerk'); setLoading(false); };
     document.head.appendChild(script);
     return () => { script.remove(); };
   }, []);
