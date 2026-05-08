@@ -9,7 +9,6 @@ import {
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import * as crypto from 'crypto';
 
-// Noble secp256k1 v2 requires explicit HMAC init
 secp.etc.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
   const h = crypto.createHmac('sha256', Buffer.from(key));
   for (const msg of msgs) h.update(Buffer.from(msg));
@@ -44,7 +43,13 @@ export class SimpleWalletService {
   async getWallet(userId: string) {
     const wallet = await this.prisma.simpleWallet.findUnique({ where: { userId } });
     if (!wallet) return null;
-    return { userId, stxAddress: wallet.stxAddress, publicKey: wallet.publicKey, network: wallet.network, createdAt: wallet.createdAt };
+    return {
+      userId,
+      stxAddress: wallet.stxAddress,
+      publicKey: wallet.publicKey,
+      network: wallet.network,
+      createdAt: wallet.createdAt,
+    };
   }
 
   async sendStx(userId: string, recipient: string, amount: number) {
@@ -63,16 +68,11 @@ export class SimpleWalletService {
       sponsored: true,
     });
 
-    const txBytes = tx.serializeBytes();
-    const txHash = crypto.createHash('sha256').update(txBytes).digest();
-    const sig = secp.sign(txHash, wallet.privateKey, { lowS: true });
-    const compact = sig.toCompactRawBytes();
-    const r = Buffer.from(compact.slice(0, 32));
-    const s = Buffer.from(compact.slice(32, 64));
-    const recovery = Buffer.from([sig.recovery ?? 0]);
-    const signed = Buffer.concat([Buffer.from(txBytes), r, s, recovery]);
+    const sigHash = tx.signBegin();
+    tx.signNextOrigin(sigHash, wallet.privateKey);
+    const signedHex = tx.serialize();
 
-    const result = await this.relayer.sponsorTransaction(signed.toString('hex'), {
+    const result = await this.relayer.sponsorTransaction(signedHex, {
       userId,
       network: wallet.network as 'mainnet' | 'testnet',
     });
