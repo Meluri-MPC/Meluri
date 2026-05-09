@@ -24,4 +24,10 @@ export class SimpleWalletController {
   send(@Body() body: { userId: string; recipient: string; amount: number }) {
     return this.service.sendStx(body.userId, body.recipient, body.amount);
   }
+
+  @Post('send-token')
+  @ApiOperation({ summary: 'Send SIP-010 token from simple wallet' })
+  sendToken(@Body() body: { userId: string; contractId: string; recipient: string; amount: string }) {
+    return this.service.sendToken(body.userId, body.contractId, body.recipient, body.amount);
+  }
 }

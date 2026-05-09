@@ -4,9 +4,14 @@ import { RelayerService } from '../relayer/relayer.service';
 import * as secp from '@noble/secp256k1';
 import {
   makeUnsignedSTXTokenTransfer,
+  makeUnsignedContractCall,
   publicKeyToAddress,
   TransactionSigner,
   privateKeyToPublic,
+  PostConditionMode,
+  uintCV,
+  principalCV,
+  noneCV,
 } from '@stacks/transactions';
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import * as crypto from 'crypto';
@@ -78,6 +83,41 @@ export class SimpleWalletService {
     });
 
     this.logger.log(`TX sent: ${result.txid}`);
+    return { txid: result.txid, status: result.status };
+  }
+
+  async sendToken(userId: string, contractId: string, recipient: string, amount: string) {
+    const wallet = await this.prisma.simpleWallet.findUnique({ where: { userId } });
+    if (!wallet) throw new Error('Wallet not found');
+
+    const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
+    const [contractAddress, contractName] = contractId.split('.');
+
+    const tx = await makeUnsignedContractCall({
+      contractAddress,
+      contractName,
+      functionName: 'transfer',
+      functionArgs: [
+        uintCV(BigInt(amount)),
+        principalCV(wallet.stxAddress),
+        principalCV(recipient),
+        noneCV(),
+      ],
+      publicKey: wallet.publicKey,
+      network: network as any,
+      sponsored: true,
+      postConditionMode: PostConditionMode.Allow,
+    });
+
+    const signer = new TransactionSigner(tx);
+    signer.signOrigin(wallet.privateKey);
+    const signedHex = tx.serialize();
+
+    const result = await this.relayer.sponsorTransaction(signedHex, {
+      network: wallet.network as 'mainnet' | 'testnet',
+    });
+
+    this.logger.log(`Token TX sent: ${result.txid}`);
     return { txid: result.txid, status: result.status };
   }
 }

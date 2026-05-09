@@ -22,6 +22,11 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const [lastTxid, setLastTxid] = useState('');
 
+  const [tokenContract, setTokenContract] = useState('');
+  const [tokenRecipient, setTokenRecipient] = useState('');
+  const [tokenAmount, setTokenAmount] = useState('');
+  const [sendingToken, setSendingToken] = useState(false);
+
   const fetchBalance = async (address: string) => {
     try {
       const res = await fetch(`https://api.testnet.hiro.so/extended/v1/address/${address}/balances`);
@@ -99,6 +104,37 @@ export default function App() {
     }
   }, [sendRecipient, sendAmount, userId, wallet]);
 
+  const handleSendToken = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tokenContract || !tokenRecipient || !tokenAmount) return;
+    setSendingToken(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(`${API_URL}/wallets/simple/send-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId.trim(),
+          contractId: tokenContract.trim(),
+          recipient: tokenRecipient.trim(),
+          amount: tokenAmount.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message || 'Failed');
+      const data = await res.json();
+      setLastTxid(data.txid);
+      setSuccess(`Token sent! txid: ${data.txid.slice(0, 20)}...`);
+      setTokenContract('');
+      setTokenRecipient('');
+      setTokenAmount('');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSendingToken(false);
+    }
+  }, [tokenContract, tokenRecipient, tokenAmount, userId]);
+
   const explorerUrl = lastTxid ? `https://explorer.hiro.so/txid/${lastTxid}?chain=testnet` : '';
 
   return (
@@ -167,6 +203,27 @@ export default function App() {
                 <a href={explorerUrl} target="_blank" rel="noopener" className="tx-link">View on Explorer</a>
               </div>
             )}
+          </div>
+
+          <div className="card">
+            <div className="card-title">Send SIP-010 Token</div>
+            <form onSubmit={handleSendToken}>
+              <div className="input-group">
+                <label>Contract ID</label>
+                <input className="input" type="text" placeholder="SP...contract-name" value={tokenContract} onChange={(e) => setTokenContract(e.target.value)} />
+              </div>
+              <div className="input-group">
+                <label>Recipient</label>
+                <input className="input" type="text" placeholder="STX address" value={tokenRecipient} onChange={(e) => setTokenRecipient(e.target.value)} />
+              </div>
+              <div className="input-group">
+                <label>Amount (raw units)</label>
+                <input className="input" type="text" placeholder="1000000" value={tokenAmount} onChange={(e) => setTokenAmount(e.target.value)} />
+              </div>
+              <button className="btn btn-primary" type="submit" disabled={sendingToken || !tokenContract || !tokenRecipient || !tokenAmount}>
+                {sendingToken ? 'Sending...' : 'Send Token'}
+              </button>
+            </form>
           </div>
 
           <button className="btn btn-danger" onClick={() => { setWallet(null); setBalance(''); setLastTxid(''); }}>
