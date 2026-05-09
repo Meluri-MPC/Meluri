@@ -54,8 +54,8 @@ export class RelayerService {
         intent: {
           feeToken: params.feeToken,
           estimatedGas: params.estimatedGas ?? 150000,
-          network: params.network ?? 'testnet',
         },
+        network: params.network ?? 'testnet',
       }),
     });
     if (!response.ok) {
