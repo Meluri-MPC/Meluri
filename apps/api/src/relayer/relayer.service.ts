@@ -39,11 +39,11 @@ export class RelayerService {
     return result;
   }
 
-  async estimateFee(params: { feeToken?: string; estimatedGas?: number }) {
+  async estimateFee(params: { feeToken?: string; estimatedGas?: number; network?: 'mainnet' | 'testnet' }) {
     return this.estimate(params);
   }
 
-  private async estimate(params: { feeToken?: string; estimatedGas?: number }): Promise<any> {
+  private async estimate(params: { feeToken?: string; estimatedGas?: number; network?: 'mainnet' | 'testnet' }): Promise<any> {
     const response = await fetch(`${this.relayerUrl}/estimate`, {
       method: 'POST',
       headers: {
@@ -54,6 +54,7 @@ export class RelayerService {
         intent: {
           feeToken: params.feeToken,
           estimatedGas: params.estimatedGas ?? 150000,
+          network: params.network ?? 'testnet',
         },
       }),
     });
