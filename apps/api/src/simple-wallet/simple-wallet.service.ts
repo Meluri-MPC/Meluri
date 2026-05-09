@@ -73,11 +73,7 @@ export class SimpleWalletService {
     signer.signOrigin(wallet.privateKey);
     const signedHex = tx.serialize();
 
-    const est = await this.relayer.estimateFee({ network: wallet.network as 'mainnet' | 'testnet' });
-    this.logger.log(`Estimate — relayer: ${est.relayerAddress} | policy: ${est.policy} | network: ${wallet.network}`);
-
     const result = await this.relayer.sponsorTransaction(signedHex, {
-      userId,
       network: wallet.network as 'mainnet' | 'testnet',
     });
 

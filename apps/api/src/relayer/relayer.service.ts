@@ -14,10 +14,9 @@ export class RelayerService {
 
   async sponsorTransaction(
     signedTxHex: string,
-    options?: { userId?: string; network?: 'mainnet' | 'testnet' },
+    options?: { network?: 'mainnet' | 'testnet' },
   ): Promise<{ txid: string; status: string }> {
     const body: Record<string, string> = { txHex: signedTxHex };
-    if (options?.userId) body.userId = options.userId;
     if (options?.network) body.network = options.network;
 
     const response = await fetch(`${this.relayerUrl}/broadcast`, {

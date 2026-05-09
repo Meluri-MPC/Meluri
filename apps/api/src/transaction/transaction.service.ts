@@ -12,6 +12,6 @@ export class TransactionService {
     userId: string,
     network: string,
   ): Promise<{ txid: string; status: string }> {
-    return this.relayer.sponsorTransaction(txHex, { userId, network: network as any });
+    return this.relayer.sponsorTransaction(txHex, { network: network as any });
   }
 }
