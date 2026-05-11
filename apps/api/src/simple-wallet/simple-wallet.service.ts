@@ -36,7 +36,7 @@ export class SimpleWalletService {
     if (existing) return { stxAddress: existing.stxAddress, publicKey: existing.publicKey };
 
     const privKey = crypto.randomBytes(32).toString('hex');
-    const pubKey = Buffer.from(privateKeyToPublic(privKey)).toString('hex');
+    const pubKey = privateKeyToPublic(privKey) as string;
     const stxAddress = publicKeyToAddress(pubKey, network === 'mainnet' ? 'mainnet' : 'testnet');
 
     await this.prisma.simpleWallet.create({
@@ -64,7 +64,7 @@ export class SimpleWalletService {
     if (!wallet) throw new Error('Wallet not found');
 
     const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
-    const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
+    const pubKey = privateKeyToPublic(wallet.privateKey) as string;
 
     const tx = await makeUnsignedSTXTokenTransfer({
       recipient,
@@ -93,8 +93,7 @@ export class SimpleWalletService {
 
     const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
     const [contractAddress, contractName] = contractId.split('.');
-    const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
-    this.logger.log(`sendToken — pubKey: ${pubKey} | stored: ${wallet.publicKey} | match: ${pubKey === wallet.publicKey}`);
+    const pubKey = privateKeyToPublic(wallet.privateKey) as string;
 
     const tx = await makeUnsignedContractCall({
       contractAddress,
