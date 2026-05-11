@@ -53,7 +53,7 @@ export class SimpleWalletService {
     return {
       userId,
       stxAddress: wallet.stxAddress,
-      publicKey: wallet.publicKey,
+      publicKey: wallet.publicKey as any,
       network: wallet.network,
       createdAt: wallet.createdAt,
     };
@@ -69,13 +69,13 @@ export class SimpleWalletService {
       recipient,
       amount: BigInt(amount),
       memo: '',
-      publicKey: wallet.publicKey,
+      publicKey: wallet.publicKey as any,
       network: network as any,
       sponsored: true,
     });
 
-    const signer = new TransactionSigner(tx);
-    signer.signOrigin(wallet.privateKey);
+    const sigHash = tx.signBegin();
+    tx.signNextOrigin(sigHash, wallet.privateKey);
     const signedHex = tx.serialize();
 
     const result = await this.relayer.sponsorTransaction(signedHex, {
@@ -103,14 +103,14 @@ export class SimpleWalletService {
         principalCV(recipient),
         noneCV(),
       ],
-      publicKey: wallet.publicKey,
+      publicKey: wallet.publicKey as any,
       network: network as any,
       sponsored: true,
       postConditionMode: PostConditionMode.Allow,
     });
 
-    const signer = new TransactionSigner(tx);
-    signer.signOrigin(wallet.privateKey);
+    const sigHash = tx.signBegin();
+    tx.signNextOrigin(sigHash, wallet.privateKey);
     const signedHex = tx.serialize();
 
     const result = await this.relayer.sponsorTransaction(signedHex, {
