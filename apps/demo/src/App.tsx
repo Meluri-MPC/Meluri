@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const API_URL = 'https://meluri.onrender.com/api/v1';
 
@@ -36,6 +36,30 @@ export default function App() {
   const [tokenAmount, setTokenAmount] = useState('');
   const [sendingToken, setSendingToken] = useState(false);
 
+  // Restore session on page load
+  useEffect(() => {
+    const saved = localStorage.getItem('meluri_demo_wallet');
+    if (saved) {
+      try {
+        const { identifier: savedId, wallet: savedWallet } = JSON.parse(saved);
+        setIdentifier(savedId);
+        updateWallet(savedWallet);
+        fetchAll(savedWallet.stxAddress);
+      } catch {}
+    }
+    setLoading(false);
+  }, []);
+
+  // Persist wallet when set
+  const updateWallet = useCallback((w: Wallet | null) => {
+    setWallet(w);
+    if (w) {
+      localStorage.setItem('meluri_demo_wallet', JSON.stringify({ identifier: identifier.trim(), wallet: w }));
+    } else {
+      localStorage.removeItem('meluri_demo_wallet');
+    }
+  }, [identifier]);
+
   const fetchAll = async (address: string) => {
     try {
       const res = await fetch(`https://api.testnet.hiro.so/extended/v1/address/${address}/balances`);
@@ -51,8 +75,9 @@ export default function App() {
           const decimals = v.decimals || 6;
           const raw = v.balance;
           const display = (Number(raw) / Math.pow(10, decimals)).toString();
+          const symbol = v.symbol && v.symbol !== '???' ? v.symbol : cname;
           return {
-            symbol: v.symbol || '???',
+            symbol,
             name: v.name || cname,
             balance: display,
             decimals,
@@ -78,7 +103,7 @@ export default function App() {
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data: Wallet = await res.json();
-      setWallet(data);
+      updateWallet(data);
       await fetchAll(data.stxAddress);
       setSuccess('Wallet created!');
     } catch (e: any) {
@@ -97,7 +122,7 @@ export default function App() {
       if (res.status === 404) throw new Error('Wallet not found. Create one first.');
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data: Wallet = await res.json();
-      setWallet(data);
+      updateWallet(data);
       await fetchAll(data.stxAddress);
     } catch (e: any) {
       setError(e.message);
@@ -271,7 +296,7 @@ export default function App() {
             </div>
           )}
 
-          <button className="btn btn-danger" onClick={() => { setWallet(null); setBalance(''); setTokens([]); setLastTxid(''); }}>
+          <button className="btn btn-danger" onClick={() => { updateWallet(null); setBalance(''); setTokens([]); setLastTxid(''); }}>
             Switch Account
           </button>
         </>
