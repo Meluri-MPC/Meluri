@@ -185,10 +185,10 @@ export default function App() {
               onKeyDown={(e) => e.key === 'Enter' && handleCreateWallet()} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={handleCreateWallet} disabled={loading || !email.trim()}>
+            <button className="btn btn-primary" onClick={handleCreateWallet} disabled={loading || !identifier.trim()}>
               {loading ? 'Creating...' : 'Create Wallet'}
             </button>
-            <button className="btn btn-danger" onClick={handleGetWallet} disabled={loading || !email.trim()} style={{ padding: 14 }}>
+            <button className="btn btn-danger" onClick={handleGetWallet} disabled={loading || !identifier.trim()} style={{ padding: 14 }}>
               Load
             </button>
           </div>
