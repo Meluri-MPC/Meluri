@@ -1,0 +1,6 @@
+{
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "buildCommand": "pnpm install && pnpm --filter @meluri/demo build",
+  "installCommand": "pnpm install"
+}
