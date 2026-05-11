@@ -1,66 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { VelumXClient } from '@velumx/sdk';
 
 @Injectable()
 export class RelayerService {
   private readonly logger = new Logger(RelayerService.name);
-  private relayerUrl: string;
-  private apiKey: string;
+  private velumx: VelumXClient;
 
   constructor(private config: ConfigService) {
-    this.relayerUrl = this.config.get<string>('VELUMX_RELAYER_URL', 'https://api.velumx.xyz/api/v1');
-    this.apiKey = this.config.get<string>('VELUMX_RELAYER_API_KEY', '');
+    const paymasterUrl = this.config.get<string>('VELUMX_RELAYER_URL', 'https://api.velumx.xyz/api/v1');
+    const apiKey = this.config.get<string>('VELUMX_RELAYER_API_KEY');
+    const network = this.config.get<string>('VELUMX_NETWORK', 'testnet') as 'mainnet' | 'testnet';
+
+    this.velumx = new VelumXClient({ paymasterUrl, apiKey, network });
   }
 
   async sponsorTransaction(
     signedTxHex: string,
     options?: { network?: 'mainnet' | 'testnet' },
   ): Promise<{ txid: string; status: string }> {
-    const body: Record<string, string> = { txHex: signedTxHex };
-    if (options?.network) body.network = options.network;
-
-    const response = await fetch(`${this.relayerUrl}/broadcast`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
-      },
-      body: JSON.stringify(body),
+    const result = await this.velumx.sponsor(signedTxHex, {
+      network: options?.network || this.config.get<string>('VELUMX_NETWORK', 'testnet') as 'mainnet' | 'testnet',
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: response.statusText }));
-      throw new Error(`VelumX: ${err.error || err.message || response.statusText}`);
-    }
-
-    const result = await response.json();
     this.logger.log(`Sponsored tx ${result.txid} via VelumX`);
     return result;
   }
 
-  async estimateFee(params: { feeToken?: string; estimatedGas?: number; network?: 'mainnet' | 'testnet' }) {
-    return this.estimate(params);
+  async estimateFee(params: { feeToken?: string; estimatedGas?: number }) {
+    return this.velumx.estimateFee(params);
   }
 
-  private async estimate(params: { feeToken?: string; estimatedGas?: number; network?: 'mainnet' | 'testnet' }): Promise<any> {
-    const response = await fetch(`${this.relayerUrl}/estimate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
-      },
-      body: JSON.stringify({
-        intent: {
-          feeToken: params.feeToken,
-          estimatedGas: params.estimatedGas ?? 150000,
-        },
-        network: params.network ?? 'testnet',
-      }),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: response.statusText }));
-      throw new Error(`VelumX estimate: ${err.error || err.message || response.statusText}`);
-    }
-    return response.json();
+  async getConfig() {
+    return this.velumx.getConfig();
   }
 }
