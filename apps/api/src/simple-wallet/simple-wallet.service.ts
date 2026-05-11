@@ -64,12 +64,13 @@ export class SimpleWalletService {
     if (!wallet) throw new Error('Wallet not found');
 
     const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
+    const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
 
     const tx = await makeUnsignedSTXTokenTransfer({
       recipient,
       amount: BigInt(amount),
       memo: '',
-      publicKey: wallet.publicKey as any,
+      publicKey: pubKey as any,
       network: network as any,
       sponsored: true,
     });
@@ -92,6 +93,7 @@ export class SimpleWalletService {
 
     const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
     const [contractAddress, contractName] = contractId.split('.');
+    const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
 
     const tx = await makeUnsignedContractCall({
       contractAddress,
@@ -103,7 +105,7 @@ export class SimpleWalletService {
         principalCV(recipient),
         noneCV(),
       ],
-      publicKey: wallet.publicKey as any,
+      publicKey: pubKey as any,
       network: network as any,
       sponsored: true,
       postConditionMode: PostConditionMode.Allow,
