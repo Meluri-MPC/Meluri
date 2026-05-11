@@ -81,7 +81,7 @@ const signedHex = tx.serialize() as string;
 
 ---
 
-## 4. VelumX Relayer: `Signer hash does not equal hash of public key(s)`
+## 4. VelumX Relayer: `Signer hash does not equal hash of public key(s)` ✅ RESOLVED
 
 **Symptom:**
 ```
@@ -95,13 +95,13 @@ VelumX RelayerError: Signer hash does not equal hash of public key(s): 5e7279...
 2. Created a Buffer from its UTF-8 byte representation
 3. Re-encoded those bytes as hex → producing a 256-character garbled string
 
-This double-encoded public key was passed to `makeUnsignedContractCall()`. The Stacks SDK's contract call builder apparently has stricter public key validation than the STX transfer builder, so STX transfers tolerated the double-encoding while contract calls did not.
+This double-encoded public key was passed to `makeUnsignedContractCall()`. The Stacks SDK's contract call builder validates the public key hash against the sender address — STX transfers tolerate the mismatch but contract calls (SIP-010) do not.
 
 **The debug log confirmed this:**
 ```
 pubKey: 30343564376539383036366263316137... (256 chars, double-encoded)
 stored: 30343564376539383036366263316137... (256 chars, same — old wallets also double-encoded)
-match: true  (both wrong but consistent)
+match: true  (both wrong but consistently wrong, so STX transfers worked by coincidence)
 ```
 
 **Fix:**
@@ -111,13 +111,15 @@ Use `privateKeyToPublic(key)` directly — it already returns a properly formatt
 // ❌ WRONG — double-encoding
 const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
 
-// ✅ CORRECT — already hex
+// ✅ CORRECT — already hex, 66 characters
 const pubKey = privateKeyToPublic(wallet.privateKey) as string;
 ```
 
 **Files changed:** `apps/api/src/simple-wallet/simple-wallet.service.ts`
 
-**Note:** Old wallets in the database have double-encoded public keys. The signing code now derives the public key fresh from the private key at signing time, so both old and new wallets work correctly.
+**Migration required:** Old wallets in the database have double-encoded public keys. The signing code now derives the public key fresh from the private key at signing time, so both old and new wallets can sign transactions. However, token transfers require a valid sender address derived from the correct public key. Old wallets with double-encoded keys produce wrong addresses. **Solution:** Added a "Delete & Recreate" button in the demo to let users replace old wallets with correctly-derived ones. New wallets use `privateKeyToPublic()` directly with no double-encoding.
+
+**Verification:** STX transfers ✅ | SIP-010 token transfers ✅ | Confirmed on testnet via VelumX sponsorship
 
 ---
 
@@ -446,12 +448,25 @@ useEffect(() => {
 
 ## Summary
 
-| # | Issue | Category | Root Cause | Fix Strategy |
-|---|-------|----------|------------|--------------|
-| 1 | NotEnoughFunds | VelumX | `userId` caused wrong key derivation | Remove `userId` from broadcast |
-| 2 | Invalid Signature: r < n | Signing | Manual signing with noble/secp256k1 | Use Stacks SDK TransactionSigner |
-| 3 | Parse 56 as TransactionVersion | Encoding | Double-encoding serialize() output | Remove Buffer.from wrapper |
-| 4 | Signer hash mismatch | Encoding | Double-encoding privateKeyToPublic | Remove Buffer.from wrapper |
+| # | Issue | Category | Root Cause | Fix Strategy | Status |
+|---|-------|----------|------------|--------------|--------|
+| 1 | NotEnoughFunds | VelumX | `userId` caused wrong key derivation | Remove `userId` from broadcast | ✅ |
+| 2 | Invalid Signature: r < n | Signing | Manual signing with noble/secp256k1 | Use Stacks SDK TransactionSigner | ✅ |
+| 3 | Parse 56 as TransactionVersion | Encoding | Double-encoding serialize() output | Remove Buffer.from wrapper | ✅ |
+| 4 | Signer hash mismatch | Encoding | Double-encoding privateKeyToPublic | Remove Buffer.from wrapper + wallet migration | ✅ |
+| 5 | Prisma engine not found | Vercel | Native binary not bundled | serverExternalPackages + binaryTargets | ✅ |
+| 6 | Implicit any type error | Vercel | Prisma types missing at build | Generate before Next.js build | ✅ |
+| 7 | No output directory | Vercel | Framework not detected | Explicit vercel.json | ✅ |
+| 8 | Blank page | Netlify | Leftover `email` variable ref | Rename all to `identifier` | ✅ |
+| 9 | Build root confusion | Netlify | Duplicate netlify.toml | Single root config | ✅ |
+| 10 | Lockfile out of sync | Render | Dependency removed without install | Run pnpm install | ✅ |
+| 11 | Clerk CDN URL error | Demo | Wrong URL domain | Use project-specific Clerk domain | ✅ |
+| 12 | Infinite loading | Clerk OAuth | Promise lost on redirect | Don't await, use on-mount restore | ✅ |
+| 13 | Node.js crypto in browser | SDK | No browser polyfills | Vite alias to polyfill modules | ✅ |
+| 14 | Cannot sign without cred | Turnkey | Hidden iframe | Show as overlay during auth | ✅ |
+| 15 | hmacSha256Sync not set | Server | Noble v2 needs explicit init | Set at module load | ✅ |
+| 16 | CORS blocked | API | Missing origin | Add to CORS config | ✅ |
+| 17 | Session lost on refresh | Demo | State in React only | localStorage + API restore | ✅ |
 | 5 | Prisma engine not found | Vercel | Native binary not bundled | serverExternalPackages + binaryTargets |
 | 6 | Implicit any type error | Vercel | Prisma types missing at build | Generate before Next.js build |
 | 7 | No output directory | Vercel | Framework not detected | Explicit vercel.json |
