@@ -36,18 +36,25 @@ export default function App() {
   const [tokenAmount, setTokenAmount] = useState('');
   const [sendingToken, setSendingToken] = useState(false);
 
-  // Restore session on page load
+  // Restore session on page load — auto-load wallet from API
   useEffect(() => {
     const saved = localStorage.getItem('meluri_demo_wallet');
     if (saved) {
       try {
-        const { identifier: savedId, wallet: savedWallet } = JSON.parse(saved);
+        const { identifier: savedId } = JSON.parse(saved);
         setIdentifier(savedId);
-        updateWallet(savedWallet);
-        fetchAll(savedWallet.stxAddress);
-      } catch {}
+        setLoading(true);
+        fetch(`${API_URL}/wallets/simple/${savedId}`)
+          .then(r => r.ok ? r.json() : null)
+          .then((data: Wallet | null) => {
+            if (data) { updateWallet(data); fetchAll(data.stxAddress); }
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      } catch { setLoading(false); }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Persist wallet when set
