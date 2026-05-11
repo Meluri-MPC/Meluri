@@ -30,4 +30,10 @@ export class SimpleWalletController {
   sendToken(@Body() body: { userId: string; contractId: string; recipient: string; amount: string }) {
     return this.service.sendToken(body.userId, body.contractId, body.recipient, body.amount);
   }
+
+  @Post('delete')
+  @ApiOperation({ summary: 'Delete a simple wallet' })
+  delete(@Body() body: { userId: string }) {
+    return this.service.deleteWallet(body.userId);
+  }
 }

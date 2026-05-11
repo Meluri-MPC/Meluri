@@ -53,10 +53,16 @@ export class SimpleWalletService {
     return {
       userId,
       stxAddress: wallet.stxAddress,
-      publicKey: wallet.publicKey as any,
+      publicKey: wallet.publicKey,
       network: wallet.network,
       createdAt: wallet.createdAt,
     };
+  }
+
+  async deleteWallet(userId: string) {
+    await this.prisma.simpleWallet.deleteMany({ where: { userId } });
+    this.logger.log(`Wallet deleted for ${userId}`);
+    return { deleted: true };
   }
 
   async sendStx(userId: string, recipient: string, amount: number) {

@@ -138,6 +138,30 @@ export default function App() {
     }
   }, [identifier]);
 
+  const handleDeleteWallet = useCallback(async () => {
+    if (!identifier.trim()) return;
+    if (!confirm('Delete wallet and create a new one?')) return;
+    setLoading(true);
+    setError('');
+    try {
+      await fetch(`${API_URL}/wallets/simple/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: identifier.trim() }),
+      });
+      localStorage.removeItem('meluri_demo_wallet');
+      setWallet(null);
+      setBalance('0');
+      setTokens([]);
+      setLastTxid('');
+      setSuccess('Deleted. Create a new wallet now.');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [identifier]);
+
   const handleSendSTX = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sendRecipient || !sendAmount) return;
@@ -230,8 +254,11 @@ export default function App() {
           <div className="card">
             <div className="card-title">Wallet</div>
             <div className="address">{wallet.stxAddress}</div>
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span style={{ color: '#6b7280', fontSize: 13 }}>{wallet.userId}</span>
+              <button className="btn btn-danger" onClick={handleDeleteWallet} disabled={loading} style={{ padding: '6px 12px', fontSize: 12, width: 'auto' }}>
+                Delete & Recreate
+              </button>
             </div>
           </div>
 
