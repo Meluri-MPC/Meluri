@@ -1,0 +1,8 @@
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm --filter @meluri/demo build"
+  publish = "apps/demo/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
