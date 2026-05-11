@@ -16,6 +16,7 @@ async function bootstrap() {
       /\.vercel\.app$/,
       /\.meluri\.xyz$/,
       /\.onrender\.com$/,
+      /\.netlify\.app$/,
       /^http:\/\/localhost:\d+$/,
     ],
     credentials: true,
