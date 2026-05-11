@@ -1,4 +1,5 @@
 [build]
+  base = "/"
   command = "pnpm install --frozen-lockfile && pnpm --filter @meluri/demo build"
   publish = "apps/demo/dist"
 
