@@ -2,6 +2,14 @@ import { useState, useCallback } from 'react';
 
 const API_URL = 'https://meluri.onrender.com/api/v1';
 
+interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  decimals: number;
+  contractAddress: string;
+}
+
 interface Wallet {
   userId: string;
   stxAddress: string;
@@ -10,9 +18,10 @@ interface Wallet {
 }
 
 export default function App() {
-  const [userId, setUserId] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [balance, setBalance] = useState('');
+  const [tokens, setTokens] = useState<TokenBalance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -22,61 +31,80 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const [lastTxid, setLastTxid] = useState('');
 
-  const [tokenContract, setTokenContract] = useState('');
+  const [selectedToken, setSelectedToken] = useState<TokenBalance | null>(null);
   const [tokenRecipient, setTokenRecipient] = useState('');
   const [tokenAmount, setTokenAmount] = useState('');
   const [sendingToken, setSendingToken] = useState(false);
 
-  const fetchBalance = async (address: string) => {
+  const fetchAll = async (address: string) => {
     try {
       const res = await fetch(`https://api.testnet.hiro.so/extended/v1/address/${address}/balances`);
       const data = await res.json();
       const raw = data?.stx?.balance || '0';
       setBalance((Number(raw) / 1_000_000).toString());
+
+      const ft = (data?.fungible_tokens || {}) as Record<string, { balance: string; decimals: number; name: string; symbol: string }>;
+      const tokenList: TokenBalance[] = Object.entries(ft)
+        .filter(([, v]) => BigInt(v.balance) > 0n)
+        .map(([contract, v]) => {
+          const [addr, cname] = contract.split('::');
+          const decimals = v.decimals || 6;
+          const raw = v.balance;
+          const display = (Number(raw) / Math.pow(10, decimals)).toString();
+          return {
+            symbol: v.symbol || '???',
+            name: v.name || cname,
+            balance: display,
+            decimals,
+            contractAddress: `${addr}.${cname}`,
+          };
+        });
+      setTokens(tokenList);
     } catch {
       setBalance('0');
+      setTokens([]);
     }
   };
 
   const handleCreateWallet = useCallback(async () => {
-    if (!userId.trim()) return;
+      if (!identifier.trim()) return;
     setLoading(true);
     setError('');
     try {
       const res = await fetch(`${API_URL}/wallets/simple`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId.trim() }),
+        body: JSON.stringify({ userId: identifier.trim() }),
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data: Wallet = await res.json();
       setWallet(data);
-      await fetchBalance(data.stxAddress);
+      await fetchAll(data.stxAddress);
       setSuccess('Wallet created!');
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [identifier]);
 
   const handleGetWallet = useCallback(async () => {
-    if (!userId.trim()) return;
+    if (!identifier.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/wallets/simple/${userId.trim()}`);
+      const res = await fetch(`${API_URL}/wallets/simple/${identifier.trim()}`);
       if (res.status === 404) throw new Error('Wallet not found. Create one first.');
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data: Wallet = await res.json();
       setWallet(data);
-      await fetchBalance(data.stxAddress);
+      await fetchAll(data.stxAddress);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [identifier]);
 
   const handleSendSTX = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +116,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/wallets/simple/send-tx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId.trim(), recipient: sendRecipient.trim(), amount: Math.round(Number(sendAmount) * 1_000_000) }),
+        body: JSON.stringify({ userId: identifier.trim(), recipient: sendRecipient.trim(), amount: Math.round(Number(sendAmount) * 1_000_000) }),
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data = await res.json();
@@ -96,44 +124,46 @@ export default function App() {
       setSuccess(`Sent! txid: ${data.txid.slice(0, 20)}...`);
       setSendRecipient('');
       setSendAmount('');
-      setTimeout(() => fetchBalance(wallet!.stxAddress), 5000);
+      setTimeout(() => fetchAll(wallet!.stxAddress), 5000);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setSending(false);
     }
-  }, [sendRecipient, sendAmount, userId, wallet]);
+  }, [sendRecipient, sendAmount, identifier, wallet]);
 
   const handleSendToken = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenContract || !tokenRecipient || !tokenAmount) return;
+    if (!selectedToken || !tokenRecipient || !tokenAmount) return;
     setSendingToken(true);
     setError('');
     setSuccess('');
     try {
+      const rawAmount = Math.round(Number(tokenAmount) * Math.pow(10, selectedToken.decimals)).toString();
       const res = await fetch(`${API_URL}/wallets/simple/send-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: userId.trim(),
-          contractId: tokenContract.trim(),
+          userId: identifier.trim(),
+          contractId: selectedToken.contractAddress,
           recipient: tokenRecipient.trim(),
-          amount: tokenAmount.trim(),
+          amount: rawAmount,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Failed');
       const data = await res.json();
       setLastTxid(data.txid);
       setSuccess(`Token sent! txid: ${data.txid.slice(0, 20)}...`);
-      setTokenContract('');
       setTokenRecipient('');
       setTokenAmount('');
+      setSelectedToken(null);
+      setTimeout(() => fetchAll(wallet!.stxAddress), 5000);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setSendingToken(false);
     }
-  }, [tokenContract, tokenRecipient, tokenAmount, userId]);
+  }, [selectedToken, tokenRecipient, tokenAmount, identifier, wallet]);
 
   const explorerUrl = lastTxid ? `https://explorer.hiro.so/txid/${lastTxid}?chain=testnet` : '';
 
@@ -150,15 +180,15 @@ export default function App() {
       {!wallet ? (
         <div className="card">
           <div className="input-group">
-            <label>User ID</label>
-            <input className="input" type="text" placeholder="Enter a username or ID" value={userId} onChange={(e) => setUserId(e.target.value)}
+            <label>Email or Username</label>
+            <input className="input" type="text" placeholder="you@example.com or myuser" value={identifier} onChange={(e) => setIdentifier(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateWallet()} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={handleCreateWallet} disabled={loading || !userId.trim()}>
+            <button className="btn btn-primary" onClick={handleCreateWallet} disabled={loading || !email.trim()}>
               {loading ? 'Creating...' : 'Create Wallet'}
             </button>
-            <button className="btn btn-danger" onClick={handleGetWallet} disabled={loading || !userId.trim()} style={{ padding: 14 }}>
+            <button className="btn btn-danger" onClick={handleGetWallet} disabled={loading || !email.trim()} style={{ padding: 14 }}>
               Load
             </button>
           </div>
@@ -175,10 +205,19 @@ export default function App() {
 
           <div className="card">
             <div className="card-title">Balance</div>
-            <div className="balance-stx">
-              {balance} <span>STX</span>
-            </div>
-            <button className="btn btn-danger" onClick={() => fetchBalance(wallet.stxAddress)} style={{ marginTop: 12, padding: 10, fontSize: 13 }}>
+            <div className="balance-stx">{balance} <span>STX</span></div>
+            {tokens.map((t) => (
+              <div key={t.contractAddress} style={{ marginTop: 6, fontSize: 14, color: '#a78bfa' }}>
+                {t.balance} {t.symbol}
+                <button
+                  onClick={() => { setSelectedToken(t); setTokenAmount(''); setTokenRecipient(''); }}
+                  style={{ marginLeft: 8, fontSize: 11, padding: '2px 8px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                >
+                  Send
+                </button>
+              </div>
+            ))}
+            <button className="btn btn-danger" onClick={() => fetchAll(wallet.stxAddress)} style={{ marginTop: 12, padding: 10, fontSize: 13 }}>
               Refresh
             </button>
           </div>
@@ -191,7 +230,7 @@ export default function App() {
                 <input className="input" type="text" placeholder="STX address" value={sendRecipient} onChange={(e) => setSendRecipient(e.target.value)} />
               </div>
               <div className="input-group">
-                <label>Amount (microSTX)</label>
+                <label>Amount (STX)</label>
                 <input className="input" type="number" placeholder="1.0 = 1 STX" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} />
               </div>
               <button className="btn btn-primary" type="submit" disabled={sending || !sendRecipient || !sendAmount}>
@@ -205,29 +244,35 @@ export default function App() {
             )}
           </div>
 
-          <div className="card">
-            <div className="card-title">Send SIP-010 Token</div>
-            <form onSubmit={handleSendToken}>
-              <div className="input-group">
-                <label>Contract ID</label>
-                <input className="input" type="text" placeholder="SP...contract-name" value={tokenContract} onChange={(e) => setTokenContract(e.target.value)} />
+          {selectedToken && (
+            <div className="card">
+              <div className="card-title">Send {selectedToken.symbol}</div>
+              <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                {selectedToken.name} — Balance: {selectedToken.balance}
               </div>
-              <div className="input-group">
-                <label>Recipient</label>
-                <input className="input" type="text" placeholder="STX address" value={tokenRecipient} onChange={(e) => setTokenRecipient(e.target.value)} />
-              </div>
-              <div className="input-group">
-                <label>Amount (raw units)</label>
-                <input className="input" type="text" placeholder="1000000" value={tokenAmount} onChange={(e) => setTokenAmount(e.target.value)} />
-              </div>
-              <button className="btn btn-primary" type="submit" disabled={sendingToken || !tokenContract || !tokenRecipient || !tokenAmount}>
-                {sendingToken ? 'Sending...' : 'Send Token'}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleSendToken}>
+                <div className="input-group">
+                  <label>Recipient</label>
+                  <input className="input" type="text" placeholder="STX address" value={tokenRecipient} onChange={(e) => setTokenRecipient(e.target.value)} />
+                </div>
+                <div className="input-group">
+                  <label>Amount ({selectedToken.symbol})</label>
+                  <input className="input" type="number" placeholder={`${selectedToken.balance}`} value={tokenAmount} onChange={(e) => setTokenAmount(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-primary" type="submit" disabled={sendingToken || !tokenRecipient || !tokenAmount}>
+                    {sendingToken ? 'Sending...' : 'Send'}
+                  </button>
+                  <button className="btn btn-danger" type="button" onClick={() => setSelectedToken(null)} style={{ padding: 14 }}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
-          <button className="btn btn-danger" onClick={() => { setWallet(null); setBalance(''); setLastTxid(''); }}>
-            Switch User
+          <button className="btn btn-danger" onClick={() => { setWallet(null); setBalance(''); setTokens([]); setLastTxid(''); }}>
+            Switch Account
           </button>
         </>
       )}
