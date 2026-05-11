@@ -94,6 +94,7 @@ export class SimpleWalletService {
     const network = wallet.network === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
     const [contractAddress, contractName] = contractId.split('.');
     const pubKey = Buffer.from(privateKeyToPublic(wallet.privateKey)).toString('hex');
+    this.logger.log(`sendToken — pubKey: ${pubKey} | stored: ${wallet.publicKey} | match: ${pubKey === wallet.publicKey}`);
 
     const tx = await makeUnsignedContractCall({
       contractAddress,
