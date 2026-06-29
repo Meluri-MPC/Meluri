@@ -137,7 +137,7 @@ jobs:
           kubectl rollout status deployment/velumx-api -n velumx-staging --timeout=5m
 
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v3
         with:
           payload: |
             {
@@ -185,7 +185,7 @@ jobs:
           echo "Rollback triggered — check logs for errors"
 
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v3
         with:
           payload: |
             {
