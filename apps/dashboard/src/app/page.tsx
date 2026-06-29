@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+﻿import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { Wallet2, Key, Activity, Users } from 'lucide-react';
@@ -37,7 +37,7 @@ export default async function OverviewPage() {
   ]);
 
   const stats = [
-    { label: 'Active API Keys', value: apiKeyCount, icon: Key, color: 'text-meluri-400' },
+    { label: 'Active API Keys', value: apiKeyCount, icon: Key, color: 'text-velumx-400' },
     { label: 'MPC Wallets', value: mpcOrg?.walletCount ?? wallets, icon: Wallet2, color: 'text-emerald-400' },
     { label: 'Transactions', value: mpcOrg?.txCount ?? transactions, icon: Activity, color: 'text-amber-400' },
     { label: 'App Name', value: mpcOrg?.appName ?? 'Not configured', icon: Users, color: 'text-purple-400', isString: true },
@@ -66,45 +66,69 @@ export default async function OverviewPage() {
 
       <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 className="text-lg font-semibold mb-4">Quick Start</h2>
-        <div className="bg-gray-950 rounded-lg p-4 font-mono text-sm text-gray-300">
-          <p className="text-gray-500">// 1. Install the SDK</p>
-          <p className="text-meluri-400">npm install @meluri/mpc</p>
-          <br />
-          <p className="text-gray-500">// 2. Initialize</p>
-          <p>
-            <span className="text-purple-400">import</span>{' '}
-            <span className="text-meluri-400">{'{ MeluriMPC }'}</span>{' '}
-            <span className="text-purple-400">from</span>{' '}
-            <span className="text-emerald-400">&apos;@meluri/mpc&apos;</span>;
-          </p>
-          <br />
-          <p>
-            <span className="text-purple-400">const</span>{' '}
-            <span className="text-amber-400">meluri</span> ={' '}
-            <span className="text-purple-400">new</span>{' '}
-            <span className="text-meluri-400">MeluriMPC</span>
-            ({'{ apiKey: '}<span className="text-emerald-400">&apos;ml_...&apos;</span>{' }'});
-          </p>
-          <br />
-          <p className="text-gray-500">// 3. Authenticate users</p>
-          <p>
-            <span className="text-purple-400">await</span>{' '}
-            <span className="text-amber-400">meluri</span>.login();
-          </p>
-          <br />
-          <p className="text-gray-500">// 4. Get wallet & send</p>
-          <p>
-            <span className="text-purple-400">const</span> wallet ={' '}
-            <span className="text-purple-400">await</span>{' '}
-            <span className="text-amber-400">meluri</span>.getWallet();
-          </p>
-          <p>
-            <span className="text-purple-400">await</span>{' '}
-            <span className="text-amber-400">meluri</span>.sendSTX(
-            {'{ recipient: '}<span className="text-emerald-400">&apos;SP...&apos;</span>
-            {', amount: 1000000 }'});
-          </p>
+        <QuickStartWizard />
+      </div>
+    </div>
+  );
+}
+
+function QuickStartWizard() {
+  return (
+    <div className="space-y-4">
+      <Step
+        number={1}
+        title="Create an API Key"
+        description="Generate an API key for your SDK integration."
+        action={{ label: 'Manage API Keys', href: '/api-keys' }}
+      />
+      <Step
+        number={2}
+        title="Configure MPC"
+        description="Provision your Turnkey MPC infrastructure for embedded wallets."
+        action={{ label: 'MPC Configuration', href: '/mpc' }}
+      />
+      <Step
+        number={3}
+        title="Install & Integrate"
+        description="Add the SDK to your app and start using VelumX MPC."
+        action={null}
+        code={`npm install @velumx/mpc\n\nimport { VelumxMPC } from '@velumx/mpc';\n\nconst velumx = new VelumxMPC({\n  apiKey: 'your_api_key_here',\n  auth: myAuthProvider,\n});\n\nawait velumx.login();`}
+      />
+    </div>
+  );
+}
+
+function Step({ number, title, description, action, code }: {
+  number: number;
+  title: string;
+  description: string;
+  action: { label: string; href: string } | null;
+  code?: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div className="w-8 h-8 rounded-full bg-velumx-600 flex items-center justify-center text-sm font-bold shrink-0">
+          {number}
         </div>
+        <div className="w-px flex-1 bg-gray-800 mt-2" />
+      </div>
+      <div className="flex-1 pb-6">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <p className="text-sm text-gray-400 mt-0.5">{description}</p>
+        {action && (
+          <a
+            href={action.href}
+            className="inline-block mt-2 text-sm text-velumx-400 hover:text-velumx-300 transition-colors"
+          >
+            {action.label} &rarr;
+          </a>
+        )}
+        {code && (
+          <div className="bg-gray-950 rounded-lg p-4 mt-2 font-mono text-xs text-gray-300 whitespace-pre overflow-x-auto">
+            {code}
+          </div>
+        )}
       </div>
     </div>
   );

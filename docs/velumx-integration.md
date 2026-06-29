@@ -2,13 +2,13 @@
 
 ## Overview
 
-Meluri MPC uses **VelumX** — a Relayer-as-a-Service platform — to sponsor transaction gas fees on the Stacks blockchain. Users never need STX to send tokens. The developer's VelumX relayer wallet pays the network fee.
+VelumX MPC uses **VelumX** — a Relayer-as-a-Service platform — to sponsor transaction gas fees on the Stacks blockchain. Users never need STX to send tokens. The developer's VelumX relayer wallet pays the network fee.
 
 ## Architecture
 
 ```
 ┌──────────────┐     signed tx hex      ┌──────────────┐    co-sign + broadcast    ┌──────────────┐
-│  Meluri API  │ ──────────────────────► │  VelumX SDK  │ ────────────────────────► │ VelumX Relay │
+│  VelumX API  │ ──────────────────────► │  VelumX SDK  │ ────────────────────────► │ VelumX Relay │
 │  (NestJS)    │ ◄────────────────────── │  @velumx/sdk │ ◄──────────────────────── │  (txid)      │
 └──────────────┘       { txid }         └──────────────┘                           └──────────────┘
        │                                                                                  │
@@ -29,7 +29,7 @@ In the [VelumX Dashboard](https://dashboard.velumx.xyz):
 2. Fund the relayer address with STX (this is your "gas tank")
 3. Note the relayer address for each network (mainnet/testnet)
 
-### 2. Meluri Builds a Sponsored Transaction
+### 2. VelumX MPC Builds a Sponsored Transaction
 
 ```typescript
 // simple-wallet.service.ts
@@ -47,7 +47,7 @@ Key points:
 - No `fee` field needed — the relayer sets the fee
 - Works for STX transfers, contract calls, and SIP-010 token transfers
 
-### 3. Meluri Signs the Origin
+### 3. VelumX MPC Signs the Origin
 
 ```typescript
 const signer = new TransactionSigner(tx);
@@ -92,7 +92,7 @@ The user's transaction executes with **zero STX gas cost**. The developer's rela
 
 ### sponsonPolicy: DEVELOPER_SPONSORS
 
-Meluri uses the **DEVELOPER_SPONSORS** policy:
+VelumX MPC uses the **DEVELOPER_SPONSORS** policy:
 - User pays **nothing** (0 STX gas)
 - Developer's relayer wallet covers the network fee
 - No paymaster contract needed

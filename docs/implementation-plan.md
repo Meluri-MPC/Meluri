@@ -1,4 +1,4 @@
-# Meluri MPC — Implementation Plan
+﻿# VelumX MPC — Implementation Plan
 
 **Version:** 0.1.0
 
@@ -6,14 +6,14 @@
 
 ## 1. Overview
 
-Meluri MPC is an embedded wallet infrastructure purpose-built for the Stacks ecosystem. It provides developers with a drop-in wallet solution that eliminates the friction of external wallet extensions while preserving self-custody through threshold cryptography. Conceptually, it is "Privy for Stacks" — offering the same seamless onboarding experience but with Stacks-native primitives, a Byzantine-resilient MPC architecture, and native gas sponsorship via VelumX.
+VelumX MPC is an embedded wallet infrastructure purpose-built for the Stacks ecosystem. It provides developers with a drop-in wallet solution that eliminates the friction of external wallet extensions while preserving self-custody through threshold cryptography. Conceptually, it is "Privy for Stacks" — offering the same seamless onboarding experience but with Stacks-native primitives, a Byzantine-resilient MPC architecture, and native gas sponsorship via VelumX.
 
 **Core capabilities:**
 
 | Capability | Description |
 |---|---|
 | **Social Auth** | End-users authenticate via Google, Apple, GitHub, Discord, Twitter, or email (passcode). No crypto wallet required at sign-up. |
-| **MPC Key Management** | A 2-of-3 Threshold Signature Scheme (TSS) distributes key shares across the Meluri server, the user's browser, and an encrypted recovery share. No single party can sign alone. |
+| **MPC Key Management** | A 2-of-3 Threshold Signature Scheme (TSS) distributes key shares across the VelumX server, the user's browser, and an encrypted recovery share. No single party can sign alone. |
 | **Programmable Wallets** | Developers choose: (a) use the MPC wallet automatically provisioned for users, or (b) let users connect external Stacks wallets (Xverse, Leather). Both exposed through a unified interface. |
 | **Gas Sponsorship** | Transactions are relayed through VelumX, which sponsors gas fees. End-users never need STX to transact. |
 | **Developer Dashboard** | Web UI for managing API keys, configuring auth providers, whitelisting domains, and viewing usage analytics. |
@@ -29,10 +29,10 @@ Meluri MPC is an embedded wallet infrastructure purpose-built for the Stacks eco
 │                           CLIENT (Browser)                              │
 │  ┌──────────────────────────────┐   ┌────────────────────────────────┐  │
 │  │  Iframe Auth Modal           │   │  dApp                           │  │
-│  │  (meluri.xyz/auth)           │   │  @meluri/react / @meluri/core   │  │
+│  │  (velumx.xyz/auth)           │   │  @velumx/react / @velumx/core   │  │
 │  │                              │   │                                 │  │
-│  │  OAuth / Email flow          │   │  <MeluriProvider>               │  │
-│  │  ──────────────────►         │   │  useMeluriWallet()              │  │
+│  │  OAuth / Email flow          │   │  <VelumxProvider>               │  │
+│  │  ──────────────────►         │   │  useVelumxWallet()              │  │
 │  │  postMessage: {token} ───────┼───┼─► receives JWT + key share     │  │
 │  │                              │   │  manages WebSocket to MPC svc   │  │
 │  │  Encrypts & stores           │   │  manages session keys           │  │
@@ -136,7 +136,7 @@ Meluri MPC is an embedded wallet infrastructure purpose-built for the Stacks eco
 
 ### Component Interactions
 
-1. **Auth flow:** dApp renders `<MeluriProvider>`. SDK injects an iframe pointing to `meluri.xyz/auth`. User completes OAuth/email flow inside the iframe. The iframe returns a JWT via `postMessage`. The SDK stores the JWT in memory.
+1. **Auth flow:** dApp renders `<VelumxProvider>`. SDK injects an iframe pointing to `velumx.xyz/auth`. User completes OAuth/email flow inside the iframe. The iframe returns a JWT via `postMessage`. The SDK stores the JWT in memory.
 
 2. **MPC wallet creation:** After first auth, SDK sends JWT → Auth Service (verified) → MPC Service initiates DKG. The MPC service generates the key in a distributed fashion: the server generates its share, the client generates its share, both exchange commitments and partial information via WebSocket. The resulting Stacks address is derived from the joint public key.
 
@@ -156,14 +156,14 @@ Meluri MPC is an embedded wallet infrastructure purpose-built for the Stacks eco
 |---|---|
 | **W1–2** | OAuth2 provider integrations: Google, Apple, GitHub. Each implements the standard OAuth2 authorization code flow with PKCE. Redirect URIs are configured per-sub-org (per developer API key). |
 | **W3** | Discord and Twitter OAuth2 providers. Email passcode auth (generate 6-digit OTP, store hashed in Redis with 5-min TTL, send via Resend or SendGrid). |
-| **W4** | JWT issuance logic: on successful auth, issue an opaque JWT containing `{ sub: userId, org: orgId, scope, iat, exp }` signed with RS256. Multi-tenant middleware — extract API key from `x-api-key` header, resolve sub-org, scope JWT to that org. Clerk removal from SDK; SDK now uses Meluri's own auth. |
-| **W5** | SDK auth module: `@meluri/core` with `MeluriAuth` class. Iframe-based auth modal served at `auth.meluri.xyz`. Communication via `postMessage`. Session persistence in memory with automatic refresh. |
-| **W6** | Dashboard auth pages (sign-in, sign-up with Clerk or Meluri auth). API key CRUD in dashboard. Infrastructure: Docker Compose, env management, CI pipeline (GitHub Actions — lint, typecheck, test, build containers). |
+| **W4** | JWT issuance logic: on successful auth, issue an opaque JWT containing `{ sub: userId, org: orgId, scope, iat, exp }` signed with RS256. Multi-tenant middleware — extract API key from `x-api-key` header, resolve sub-org, scope JWT to that org. Clerk removal from SDK; SDK now uses VelumX's own auth. |
+| **W5** | SDK auth module: `@velumx/core` with `VelumxAuth` class. Iframe-based auth modal served at `auth.velumx.xyz`. Communication via `postMessage`. Session persistence in memory with automatic refresh. |
+| **W6** | Dashboard auth pages (sign-in, sign-up with Clerk or VelumX auth). API key CRUD in dashboard. Infrastructure: Docker Compose, env management, CI pipeline (GitHub Actions — lint, typecheck, test, build containers). |
 
 **Key decisions locked in Phase 1:**
 - JWT stored in httpOnly cookie (iframe domain) + accessible via JavaScript for SDK.
 - OAuth2 PKCE with state parameter for CSRF protection.
-- Email OTP via Redis `SETEX meluri:otp:<email> 300 <hashed-code>`.
+- Email OTP via Redis `SETEX velumx:otp:<email> 300 <hashed-code>`.
 
 ### Phase 2: MPC Service (8 weeks)
 
@@ -202,7 +202,7 @@ The GG20 protocol (Gennaro & Goldfeder, 2020) is chosen because:
 |---|---|
 | **W1** | External wallet connector. Implement `StacksWalletProvider` interface that adapts Xverse and Leather browser extensions. Detect injected `window.StacksProvider` or `window.LeatherProvider`. Standardize to a `WalletClient` interface: `{ getAddresses(): Promise<string[]>; signTransaction(tx): Promise<string>; signMessage(msg): Promise<string> }`. |
 | **W2** | Programmable wallet abstraction. `WalletOrchestrator` class in the SDK that presents a unified API: `.connect(type: 'mpc' | 'xverse' | 'leather')`, `.getAddress()`, `.signAndSend(tx)`. For MPC wallets, signing routes through the MPC ceremony; for external wallets, delegates to the extension. Transaction construction always uses `@stacks/transactions`. |
-| **W3** | UI Kit. React components for wallet selection modal: `WalletSelector`, `WalletButton` (for each provider), network badge, address display, disconnect button. Shadcn/ui-based components in `@meluri/react/ui`. Tailwind-styled. |
+| **W3** | UI Kit. React components for wallet selection modal: `WalletSelector`, `WalletButton` (for each provider), network badge, address display, disconnect button. Shadcn/ui-based components in `@velumx/react/ui`. Tailwind-styled. |
 
 ### Phase 4: SDK & Developer Experience (2 weeks)
 
@@ -210,8 +210,8 @@ The GG20 protocol (Gennaro & Goldfeder, 2020) is chosen because:
 
 | Week | Deliverables |
 |---|---|
-| **W1** | SDK packaging. Split current `@meluri/mpc` (now `@meluri/core`) and create new `@meluri/react`. Core package: framework-agnostic, no React dependency. React package: `<MeluriProvider>`, `useMeluriAuth()`, `useMeluriWallet()`, `useSendTransaction()`, `useSessionKey()`. Published to npm under `@meluri` scope. |
-| **W2** | Documentation site (VitePress or Nextra). Sections: Quick Start, Installation, Auth Configuration, Wallets, Signing, Gas Sponsorship, API Reference, Migration Guide (from Turnkey to native MPC). Example apps: a Next.js demo, a Vite/React demo. Demo app in `apps/demo` updated to use `@meluri/react`. |
+| **W1** | SDK packaging. Split current `@meluri/mpc` (now `@velumx/core`) and create new `@velumx/react`. Core package: framework-agnostic, no React dependency. React package: `<VelumxProvider>`, `useVelumxAuth()`, `useVelumxWallet()`, `useSendTransaction()`, `useSessionKey()`. Published to npm under `@velumx` scope. |
+| **W2** | Documentation site (VitePress or Nextra). Sections: Quick Start, Installation, Auth Configuration, Wallets, Signing, Gas Sponsorship, API Reference, Migration Guide (from Turnkey to native MPC). Example apps: a Next.js demo, a Vite/React demo. Demo app in `apps/demo` updated to use `@velumx/react`. |
 
 ### Phase 5: Production Hardening (2 weeks)
 
@@ -233,7 +233,7 @@ The GG20 protocol (Gennaro & Goldfeder, 2020) is chosen because:
 | Signing parties | Typically 2-server | Server + Client + Recovery |
 | Byzantine resilience | 1-of-2 (if one server is down, wallet frozen) | 2-of-3 (can tolerate 1 share loss) |
 | User experience | User has no direct share; purely server-side | User's browser holds Share B → true self-custody |
-| Recovery UX | Server-only recovery | Recovery share C allows recovery even if Meluri servers are lost |
+| Recovery UX | Server-only recovery | Recovery share C allows recovery even if VelumX servers are lost |
 | Latency overhead | 100–200ms per signing | ~4 rounds of messages (200–400ms total) |
 
 **Decision:** 2-of-3 TSS. The 2-of-3 threshold gives us: (a) liveness — signing works with any 2 of 3 shares, (b) self-custody — the user's browser holds a share so the server alone cannot sign, (c) recovery — Share C provides a fallback path.
@@ -317,19 +317,19 @@ Decryption:      on auth, derive key from session, decrypt → use in signing ce
 **Why iframe over redirect:**
 - Prevents dApp context loss (no full-page navigation).
 - Better UX — auth modal appears in-page.
-- Security isolation — auth domain (`auth.meluri.xyz`) is a separate origin from the dApp, containing cookies and tokens.
+- Security isolation — auth domain (`auth.velumx.xyz`) is a separate origin from the dApp, containing cookies and tokens.
 
 **Protocol:**
 
 ```
-[meluri.xyz/auth iframe]                         [dApp]
+[velumx.xyz/auth iframe]                         [dApp]
         │                                           │
-        │  postMessage: { type: 'MELURI_AUTH_READY' }│
+        │  postMessage: { type: 'VELUMX_AUTH_READY' }│
         │──────────────────────────────────────────►│
         │                                           │
         │  user completes OAuth/email flow          │
         │                                           │
-        │  postMessage: { type: 'MELURI_AUTH_TOKEN', │
+        │  postMessage: { type: 'VELUMX_AUTH_TOKEN', │
         │                  token: '<jwt>' }         │
         │──────────────────────────────────────────►│
         │                                           │
@@ -338,7 +338,7 @@ Decryption:      on auth, derive key from session, decrypt → use in signing ce
         │                              WebSocket    │
 ```
 
-Origin validation: SDK only accepts messages from `https://auth.meluri.xyz`. Iframe only accepts parent origins registered as `allowedDomains` in the developer's sub-org configuration.
+Origin validation: SDK only accepts messages from `https://auth.velumx.xyz`. Iframe only accepts parent origins registered as `allowedDomains` in the developer's sub-org configuration.
 
 ---
 
@@ -373,11 +373,11 @@ Origin validation: SDK only accepts messages from `https://auth.meluri.xyz`. Ifr
 | **API uptime (auth-service)** | 99.95% | Monthly, excluding planned maintenance |
 | **API uptime (mpc-service)** | 99.95% | Monthly |
 | **Developer NPS** | >50 | Quarterly survey of dashboard users |
-| **End-user auth error rate** | < 1% | Failed auths due to Meluri infra (excluding user errors) |
+| **End-user auth error rate** | < 1% | Failed auths due to VelumX infra (excluding user errors) |
 
 ### Proxy metrics for early validation (pre-launch):
 
-- **Internal dogfooding:** 3 partner dApps using Meluri MPC in testnet before mainnet launch.
+- **Internal dogfooding:** 3 partner dApps using VelumX MPC in testnet before mainnet launch.
 - **Test coverage:** >80% line coverage on auth module, >90% on TSS library.
 - **Fuzz test hours:** >100 CPU-hours of fuzz testing on TSS signing and verification.
 - **Audit findings:** Zero critical or high findings from external security review.

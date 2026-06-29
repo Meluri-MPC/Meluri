@@ -1,4 +1,4 @@
-# Meluri MPC — System Design Document
+﻿# VelumX MPC — System Design Document
 
 > **Status:** Draft v1.0  
 > **Last Updated:** 2026-05-09  
@@ -24,9 +24,9 @@
 
 ## 1. System Overview
 
-### 1.1 What Meluri MPC Is
+### 1.1 What VelumX MPC Is
 
-Meluri MPC is an **embedded wallet infrastructure** for the Stacks blockchain ecosystem. It enables developers to integrate non-custodial, MPC-based wallets directly into their web applications with a few lines of code — analogous to what Privy and Web3Auth provide for Ethereum and Solana ecosystems, but purpose-built for Stacks.
+VelumX MPC is an **embedded wallet infrastructure** for the Stacks blockchain ecosystem. It enables developers to integrate non-custodial, MPC-based wallets directly into their web applications with a few lines of code — analogous to what Privy and Web3Auth provide for Ethereum and Solana ecosystems, but purpose-built for Stacks.
 
 ### 1.2 The Problem
 
@@ -46,7 +46,7 @@ Stacks applications face three critical wallet UX challenges:
 - **Stacks-native operations** — STX transfers, SIP-010 fungible tokens, SIP-009 NFTs, Clarity contract calls, post-condition construction
 - **Sponsored transactions** — integrated relay service via VelumX (or configurable relay providers)
 - **Hiro API indexing** — on-chain balance and transaction syncing with PostgreSQL persistence
-- **OAuth-based authentication** — developer brings their own auth (Clerk, Auth0, Firebase, etc.); Meluri pairs user identity to wallet
+- **OAuth-based authentication** — developer brings their own auth (Clerk, Auth0, Firebase, etc.); VelumX pairs user identity to wallet
 - **Developer dashboard** — API key management, MPC provisioning, wallet analytics, usage metrics
 
 ### 1.4 Non-Goals (v1)
@@ -64,21 +64,21 @@ Stacks applications face three critical wallet UX challenges:
 │                                     END-USER BROWSER                                  │
 │                                                                                      │
 │  ┌──────────────────────────────────────┐    ┌─────────────────────────────────────┐ │
-│  │         Developer dApp               │    │     Meluri MPC Browser SDK          │ │
+│  │         Developer dApp               │    │     VelumX MPC Browser SDK          │ │
 │  │                                      │    │                                     │ │
-│  │  import { MeluriMPC } from           │    │  ┌───────────────────────────────┐  │ │
-│  │    '@meluri/mpc';                    │    │  │   iframe Auth Modal            │  │ │
+│  │  import { VelumXMPC } from           │    │  ┌───────────────────────────────┐  │ │
+│  │    '@velumx/mpc';                    │    │  │   iframe Auth Modal            │  │ │
 │  │                                      │    │  │   (Turnkey Stamper)            │  │ │
-│  │  const meluri = new MeluriMPC({      │    │  │   - OAuth provider selection    │  │ │
+│  │  const velumx = new VelumXMPC({      │    │  │   - OAuth provider selection    │  │ │
 │  │    apiKey: 'ml_...',                 │    │  │   - Email/passkey input         │  │ │
 │  │    auth: new MpcAuth({               │    │  │   - Session delegation consent  │  │ │
 │  │      clerkKey: 'pk_...'              │    │  └───────────────────────────────┘  │ │
 │  │    })                                │    │                                     │ │
 │  │  });                                 │    │  ┌───────────────────────────────┐  │ │
 │  │                                      │    │  │   React Hooks Layer           │  │ │
-│  │  meluri.login();                     │    │  │   useMeluriWallet()            │  │ │
-│  │  meluri.sendSTX({...});              │    │  │   useMeluriSession()           │  │ │
-│  │  meluri.getBalance();                │    │  │   useMeluriTransactions()      │  │ │
+│  │  velumx.login();                     │    │  │   useVelumXWallet()            │  │ │
+│  │  velumx.sendSTX({...});              │    │  │   useVelumXSession()           │  │ │
+│  │  velumx.getBalance();                │    │  │   useVelumXTransactions()      │  │ │
 │  │                                      │    │  └───────────────────────────────┘  │ │
 │  └──────────────────────────────────────┘    │                                     │ │
 │                                              │  ┌───────────────────────────────┐  │ │
@@ -92,7 +92,7 @@ Stacks applications face three critical wallet UX challenges:
           │ HTTPS (REST)              │ HTTPS (REST)              │ WebSocket (WSS)
           ▼                           ▼                           ▼
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                                    MELURI MPC BACKEND                                 │
+│                                    VelumX MPC BACKEND                                 │
 │                                                                                      │
 │  ┌─────────────────────┐  ┌─────────────────────┐  ┌──────────────────────────────┐ │
 │  │    Auth Service      │  │    MPC Service       │  │   Wallet Orchestrator        │ │
@@ -270,7 +270,7 @@ model RefreshToken {
 #### 3a.3 OAuth Flow
 
 ```
-End-User Browser              Developer dApp             Meluri Auth Service         OAuth Provider
+End-User Browser              Developer dApp             VelumX Auth Service         OAuth Provider
      │                             │                            │                        │
      │  1. Click "Login"           │                            │                        │
      │ ──────────────────────────> │                            │                        │
@@ -300,8 +300,8 @@ End-User Browser              Developer dApp             Meluri Auth Service    
   },
   "payload": {
     "sub": "user_clx7k9abc0000001",         // end-user ID
-    "iss": "meluri-mpc",                     // issuer
-    "aud": ["meluri-api", "meluri-mpc-ws"],  // audience
+    "iss": "velumx-mpc",                     // issuer
+    "aud": ["velumx-api", "velumx-mpc-ws"],  // audience
     "dev": "dev_clx7k2def0000002",           // developer ID
     "org": "org_clx7k3ghi0000003",           // MPC org ID
     "wallet": "SP2J...xyz",                  // Stacks address
@@ -310,7 +310,7 @@ End-User Browser              Developer dApp             Meluri Auth Service    
     "exp": 1715306400,                       // 2-hour expiry
     "jti": "jti_clx7k4jkl0000004"           // unique token ID
   },
-  "signature": "HMAC-SHA256(header.payload, MELURI_JWT_SECRET)"
+  "signature": "HMAC-SHA256(header.payload, VELUMX_JWT_SECRET)"
 }
 ```
 
@@ -640,7 +640,7 @@ class EthereumStacksMapper implements ExternalWalletProvider {
     // Hash the ETH address → use as Stacks private key seed
     // Derive using @stacks/transactions utilities
     const seed = crypto.createHash('sha256')
-      .update(`meluri:eth-to-stx:${ethAddress.toLowerCase()}`)
+      .update(`velumx:eth-to-stx:${ethAddress.toLowerCase()}`)
       .digest();
     return publicKeyToAddress(
       Buffer.from(getPublicKey(seed, true)).toString('hex'),
@@ -759,10 +759,10 @@ async buildStxTransfer(params: StxTransferParams): Promise<UnsignedTx> {
 #### 3d.1 Package Structure
 
 ```
-@meluri/mpc/
+@velumx/mpc/
 ├── src/
 │   ├── index.ts              # Public API exports
-│   ├── client.ts             # MeluriMPC main class
+│   ├── client.ts             # VelumXMPC main class
 │   ├── types.ts              # TypeScript interfaces
 │   ├── auth.ts               # MpcAuth — OAuth abstraction
 │   ├── wallet.ts             # MpcWalletApi — REST calls to backend
@@ -771,10 +771,10 @@ async buildStxTransfer(params: StxTransferParams): Promise<UnsignedTx> {
 │   ├── turnkey.ts            # MpcTurnkey — Turnkey iframe integration
 │   ├── react/                # React hooks (separate entry point)
 │   │   ├── index.ts
-│   │   ├── MeluriProvider.tsx
-│   │   ├── useMeluriWallet.ts
-│   │   ├── useMeluriSession.ts
-│   │   └── useMeluriTransactions.ts
+│   │   ├── VelumXProvider.tsx
+│   │   ├── useVelumXWallet.ts
+│   │   ├── useVelumXSession.ts
+│   │   └── useVelumXTransactions.ts
 │   └── iframe/               # iframe auth modal (bundled separately)
 │       ├── index.html
 │       ├── modal.ts
@@ -808,36 +808,36 @@ async buildStxTransfer(params: StxTransferParams): Promise<UnsignedTx> {
 #### 3d.2 React Hooks API
 
 ```tsx
-// MeluriProvider.tsx
+// VelumXProvider.tsx
 import { createContext, useContext, useMemo, ReactNode } from 'react';
-import { MeluriMPC, MeluriMPCConfig } from '@meluri/mpc';
+import { VelumXMPC, VelumXMPCConfig } from '@velumx/mpc';
 
-const MeluriContext = createContext<MeluriMPC | null>(null);
+const VelumXContext = createContext<VelumXMPC | null>(null);
 
-export function MeluriProvider({
+export function VelumXProvider({
   config,
   children,
 }: {
-  config: MeluriMPCConfig;
+  config: VelumXMPCConfig;
   children: ReactNode;
 }) {
-  const client = useMemo(() => new MeluriMPC(config), [config.apiKey]);
+  const client = useMemo(() => new VelumXMPC(config), [config.apiKey]);
   return (
-    <MeluriContext.Provider value={client}>
+    <VelumXContext.Provider value={client}>
       {children}
-    </MeluriContext.Provider>
+    </VelumXContext.Provider>
   );
 }
 
-export function useMeluri(): MeluriMPC {
-  const ctx = useContext(MeluriContext);
-  if (!ctx) throw new Error('useMeluri must be used within MeluriProvider');
+export function useVelumX(): VelumXMPC {
+  const ctx = useContext(VelumXContext);
+  if (!ctx) throw new Error('useVelumX must be used within VelumXProvider');
   return ctx;
 }
 
-// useMeluriWallet.ts
-export function useMeluriWallet() {
-  const meluri = useMeluri();
+// useVelumXWallet.ts
+export function useVelumXWallet() {
+  const velumx = useVelumX();
   const [wallet, setWallet] = useState<MPCWallet | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -845,7 +845,7 @@ export function useMeluriWallet() {
   const login = useCallback(async () => {
     setLoading(true);
     try {
-      const w = await meluri.login();
+      const w = await velumx.login();
       setWallet(w);
       return w;
     } catch (e) {
@@ -854,45 +854,45 @@ export function useMeluriWallet() {
     } finally {
       setLoading(false);
     }
-  }, [meluri]);
+  }, [velumx]);
 
   const logout = useCallback(async () => {
-    await meluri.logout();
+    await velumx.logout();
     setWallet(null);
-  }, [meluri]);
+  }, [velumx]);
 
   return { wallet, login, logout, loading, error };
 }
 
-// useMeluriSession.ts
-export function useMeluriSession(options?: { autoRenew?: boolean }) {
-  const meluri = useMeluri();
+// useVelumXSession.ts
+export function useVelumXSession(options?: { autoRenew?: boolean }) {
+  const velumx = useVelumX();
   const [session, setSession] = useState<SessionStatus | null>(null);
 
   const createSession = useCallback(async (durMinutes?: number) => {
-    const s = await meluri.createSession(durMinutes);
+    const s = await velumx.createSession(durMinutes);
     setSession({ active: true, ...s });
     return s;
-  }, [meluri]);
+  }, [velumx]);
 
   useEffect(() => {
     if (options?.autoRenew) {
       const interval = setInterval(() => {
-        const status = meluri.getSessionStatus();
+        const status = velumx.getSessionStatus();
         if (status && status.remainingMinutes < 5) {
           createSession(30);
         }
       }, 60_000);
       return () => clearInterval(interval);
     }
-  }, [meluri, options?.autoRenew]);
+  }, [velumx, options?.autoRenew]);
 
   return { session, createSession };
 }
 
-// useMeluriTransactions.ts
-export function useMeluriTransactions() {
-  const meluri = useMeluri();
+// useVelumXTransactions.ts
+export function useVelumXTransactions() {
+  const velumx = useVelumX();
   const [balance, setBalance] = useState<BalanceResult | null>(null);
   const [txHistory, setTxHistory] = useState<TransactionRecord[]>([]);
   const [sending, setSending] = useState(false);
@@ -900,29 +900,29 @@ export function useMeluriTransactions() {
   const sendSTX = useCallback(async (params: SendSTXParams) => {
     setSending(true);
     try {
-      return await meluri.sendSTX(params);
+      return await velumx.sendSTX(params);
     } finally {
       setSending(false);
     }
-  }, [meluri]);
+  }, [velumx]);
 
   const sendToken = useCallback(async (params: SendTokenParams) => {
     setSending(true);
     try {
-      return await meluri.sendToken(params);
+      return await velumx.sendToken(params);
     } finally {
       setSending(false);
     }
-  }, [meluri]);
+  }, [velumx]);
 
   const refresh = useCallback(async () => {
     const [b, txs] = await Promise.all([
-      meluri.getAssets(),
-      meluri.getTransactionHistory(),
+      velumx.getAssets(),
+      velumx.getTransactionHistory(),
     ]);
     setBalance(b);
     setTxHistory(txs);
-  }, [meluri]);
+  }, [velumx]);
 
   return { balance, txHistory, sendSTX, sendToken, sending, refresh };
 }
@@ -931,23 +931,23 @@ export function useMeluriTransactions() {
 **Usage example in developer dApp:**
 
 ```tsx
-import { MeluriProvider, useMeluriWallet, useMeluriTransactions } from '@meluri/mpc/react';
+import { VelumXProvider, useVelumXWallet, useVelumXTransactions } from '@velumx/mpc/react';
 
 function App() {
   return (
-    <MeluriProvider config={{
+    <VelumXProvider config={{
       apiKey: 'ml_a1b2c3d4e5f6...',
       auth: new MpcAuth({ clerkKey: 'pk_test_...' }),
       network: 'testnet',
     }}>
       <WalletUI />
-    </MeluriProvider>
+    </VelumXProvider>
   );
 }
 
 function WalletUI() {
-  const { wallet, login, logout, loading } = useMeluriWallet();
-  const { balance, sendSTX, sending } = useMeluriTransactions();
+  const { wallet, login, logout, loading } = useVelumXWallet();
+  const { balance, sendSTX, sending } = useVelumXTransactions();
 
   if (loading) return <div>Loading...</div>;
   if (!wallet) return <button onClick={login}>Connect Wallet</button>;
@@ -968,9 +968,9 @@ function WalletUI() {
 #### 3d.3 Core SDK API
 
 ```typescript
-class MeluriMPC {
+class VelumXMPC {
   // Configuration
-  constructor(config: MeluriMPCConfig);
+  constructor(config: VelumXMPCConfig);
 
   // Authentication
   login(): Promise<MPCWallet>;        // Full auth flow → wallet
@@ -998,17 +998,17 @@ class MeluriMPC {
 
 #### 3d.4 iframe Auth Modal Design
 
-The iframe auth modal is loaded from a Meluri-hosted CDN endpoint and communicates with the parent dApp via `postMessage`:
+The iframe auth modal is loaded from a VelumX-hosted CDN endpoint and communicates with the parent dApp via `postMessage`:
 
 ```
 ┌────────────────────────────────────────────┐
 │         Developer dApp (parent)             │
 │                                             │
 │   ┌─────────────────────────────────────┐   │
-│   │       meluri-auth-modal iframe      │   │
+│   │       velumx-auth-modal iframe      │   │
 │   │                                     │   │
 │   │  ┌───────────────────────────────┐  │   │
-│   │  │       Meluri MPC              │  │   │
+│   │  │       VelumX MPC              │  │   │
 │   │  │     ┌───┐ ┌───┐ ┌───┐        │  │   │
 │   │  │     │ G │ │ X │ │ E │        │  │   │
 │   │  │     └───┘ └───┘ └───┘        │  │   │
@@ -1020,7 +1020,7 @@ The iframe auth modal is loaded from a Meluri-hosted CDN endpoint and communicat
 │   │  │   └────────────────────┘     │  │   │
 │   │  └───────────────────────────────┘  │   │
 │   │                                     │   │
-│   │  Powered by Meluri MPC              │   │
+│   │  Powered by VelumX MPC              │   │
 │   └─────────────────────────────────────┘   │
 │                                             │
 └────────────────────────────────────────────┘
@@ -1031,22 +1031,22 @@ The iframe auth modal is loaded from a Meluri-hosted CDN endpoint and communicat
 ```typescript
 // Parent → iframe messages
 type ParentMessage =
-  | { type: 'MELURI_INIT'; config: { apiKey: string; theme?: 'light' | 'dark' } }
-  | { type: 'MELURI_CLOSE' };
+  | { type: 'VELUMX_INIT'; config: { apiKey: string; theme?: 'light' | 'dark' } }
+  | { type: 'VELUMX_CLOSE' };
 
 // iframe → parent messages
 type IframeMessage =
-  | { type: 'MELURI_AUTH_SUCCESS'; payload: { userId: string; sessionToken: string; walletAddress: string } }
-  | { type: 'MELURI_AUTH_ERROR'; payload: { code: string; message: string } }
-  | { type: 'MELURI_SESSION_DELEGATION_REQUEST'; payload: { scopes: string[]; duration: number } }
-  | { type: 'MELURI_SESSION_DELEGATION_APPROVED'; payload: { delegation: SessionDelegation } }
-  | { type: 'MELURI_SESSION_DELEGATION_DENIED'; payload: {} }
-  | { type: 'MELURI_IFRAME_READY' }
-  | { type: 'MELURI_IFRAME_CLOSED' };
+  | { type: 'VELUMX_AUTH_SUCCESS'; payload: { userId: string; sessionToken: string; walletAddress: string } }
+  | { type: 'VELUMX_AUTH_ERROR'; payload: { code: string; message: string } }
+  | { type: 'VELUMX_SESSION_DELEGATION_REQUEST'; payload: { scopes: string[]; duration: number } }
+  | { type: 'VELUMX_SESSION_DELEGATION_APPROVED'; payload: { delegation: SessionDelegation } }
+  | { type: 'VELUMX_SESSION_DELEGATION_DENIED'; payload: {} }
+  | { type: 'VELUMX_IFRAME_READY' }
+  | { type: 'VELUMX_IFRAME_CLOSED' };
 
 // Origin validation in both directions:
 // - iframe only accepts messages from origins matching the developer's registered domain
-// - parent only accepts messages from the Meluri auth origin
+// - parent only accepts messages from the VelumX auth origin
 function isValidOrigin(event: MessageEvent, allowedOrigins: string[]): boolean {
   return allowedOrigins.some(origin => {
     if (origin.startsWith('*.')) {
@@ -1057,22 +1057,22 @@ function isValidOrigin(event: MessageEvent, allowedOrigins: string[]): boolean {
 }
 
 // Initiation flow
-function openMeluriAuthModal(config: { apiKey: string }): Promise<AuthResult> {
+function openVelumXAuthModal(config: { apiKey: string }): Promise<AuthResult> {
   return new Promise((resolve, reject) => {
     const iframe = document.createElement('iframe');
-    iframe.src = `https://auth.meluri.xyz?apiKey=${config.apiKey}&origin=${window.location.origin}`;
+    iframe.src = `https://auth.velumx.xyz?apiKey=${config.apiKey}&origin=${window.location.origin}`;
     iframe.style.cssText = 'position:fixed;...';
     document.body.appendChild(iframe);
 
     window.addEventListener('message', function handler(event) {
-      if (!isValidOrigin(event, ['https://auth.meluri.xyz'])) return;
+      if (!isValidOrigin(event, ['https://auth.velumx.xyz'])) return;
 
-      if (event.data.type === 'MELURI_AUTH_SUCCESS') {
+      if (event.data.type === 'VELUMX_AUTH_SUCCESS') {
         window.removeEventListener('message', handler);
         document.body.removeChild(iframe);
         resolve(event.data.payload);
       }
-      if (event.data.type === 'MELURI_AUTH_ERROR') {
+      if (event.data.type === 'VELUMX_AUTH_ERROR') {
         window.removeEventListener('message', handler);
         document.body.removeChild(iframe);
         reject(new Error(event.data.payload.message));
@@ -1447,7 +1447,7 @@ All endpoints are prefixed with `/api/v1`.
 #### Connection
 
 ```
-wss://api.meluri.xyz/mpc?token=<jwt>
+wss://api.velumx.xyz/mpc?token=<jwt>
 ```
 
 The JWT must include the `wallet` claim matching the wallet being operated on.
@@ -1473,7 +1473,7 @@ The JWT must include the `wallet` claim matching the wallet being operated on.
 #### Event Stream (`/events`)
 
 ```
-wss://api.meluri.xyz/events?apiKey=<key>
+wss://api.velumx.xyz/events?apiKey=<key>
 ```
 
 | Event | Payload | Description |
@@ -1581,9 +1581,9 @@ async function encryptShare(plaintext: string, keyId: string): Promise<Encrypted
 // In production, CORS is restricted to verified developer domains
 app.enableCors({
   origin: (origin, callback) => {
-    // Allow if origin matches a verified developer domain OR is meluri infrastructure
+    // Allow if origin matches a verified developer domain OR is VelumX infrastructure
     if (!origin) return callback(null, true);
-    if (origin.endsWith('.meluri.xyz')) return callback(null, true);
+    if (origin.endsWith('.velumx.xyz')) return callback(null, true);
     if (origin === 'http://localhost:3000' || origin.startsWith('http://localhost:')) {
       return callback(null, true); // development only
     }
@@ -1670,14 +1670,14 @@ The raw key is returned **only once** at creation time. It cannot be retrieved a
 │                      Docker Compose (dev)                        │
 │                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │ PostgreSQL 16│  │   Redis 7    │  │   meluri-api          │  │
+│  │ PostgreSQL 16│  │   Redis 7    │  │   velumx-api          │  │
 │  │ (Alpine)    │  │   (Alpine)   │  │   (Node 18, NestJS)   │  │
 │  │             │  │              │  │                       │  │
 │  │ Port: 5432  │  │ Port: 6379   │  │   Port: 4002          │  │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘  │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │  meluri-mpc-ws  (Node 18, NestJS + ws)                      ││
+│  │  velumx-mpc-ws  (Node 18, NestJS + ws)                      ││
 │  │  Port: 4003                                                  ││
 │  └──────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
@@ -1697,7 +1697,7 @@ services:
     ports:
       - "4002:4002"
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@postgres:5432/meluri_mpc
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@postgres:5432/velumx_mpc
       - REDIS_URL=redis://redis:6379
       - TURNKEY_API_PUBLIC_KEY=${TURNKEY_API_PUBLIC_KEY}
       - TURNKEY_API_PRIVATE_KEY=${TURNKEY_API_PRIVATE_KEY}
@@ -1729,7 +1729,7 @@ services:
     ports:
       - "4003:4003"
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@postgres:5432/meluri_mpc
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@postgres:5432/velumx_mpc
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - KMS_KEY_ID=${KMS_KEY_ID}
@@ -1749,13 +1749,13 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: meluri_mpc
+      POSTGRES_DB: velumx_mpc
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d meluri_mpc"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d velumx_mpc"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1799,19 +1799,19 @@ volumes:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        Kubernetes Cluster                                │
 │                                                                         │
-│  Namespace: meluri-prod                                                  │
+│  Namespace: velumx-prod                                                  │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │  Ingress (nginx-ingress-controller)                              │   │
-│  │  • api.meluri.xyz → meluri-api:4002                              │   │
-│  │  • mpc.meluri.xyz → meluri-mpc-ws:4003 (WebSocket upgrade)      │   │
-│  │  • auth.meluri.xyz → meluri-auth:3000                            │   │
-│  │  • cdn.meluri.xyz → meluri-cdn:8080                              │   │
+│  │  • api.velumx.xyz → velumx-api:4002                              │   │
+│  │  • mpc.velumx.xyz → velumx-mpc-ws:4003 (WebSocket upgrade)      │   │
+│  │  • auth.velumx.xyz → velumx-auth:3000                            │   │
+│  │  • cdn.velumx.xyz → velumx-cdn:8080                              │   │
 │  │  • TLS: cert-manager + Let's Encrypt                             │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────────────────┐   │
-│  │ meluri-api    │  │ meluri-mpc-ws │  │ meluri-auth (Next.js)     │   │
+│  │ velumx-api    │  │ velumx-mpc-ws │  │ velumx-auth (Next.js)     │   │
 │  │ Deployment    │  │ StatefulSet   │  │ Deployment                │   │
 │  │              │  │              │  │                          │   │
 │  │ replicas: 3   │  │ replicas: 2   │  │ replicas: 2              │   │
@@ -1820,7 +1820,7 @@ volumes:
 │  └───────────────┘  └───────────────┘  └───────────────────────────┘   │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  meluri-relayer (Deployment)                                     │   │
+│  │  velumx-relayer (Deployment)                                     │   │
 │  │  replicas: 2  |  resources: C1-2/256Mi                           │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
@@ -1846,10 +1846,10 @@ volumes:
 
 | Component | Strategy | Triggers | Min | Max |
 |-----------|----------|----------|:---:|:---:|
-| `meluri-api` | Horizontal Pod Autoscaler (HPA) | CPU > 70% OR req/s > 500 | 2 | 10 |
-| `meluri-mpc-ws` | StatefulSet with fixed pods (S1, S2) | Manual scale (stateful shares) | 2 | 2 |
-| `meluri-auth` | HPA | CPU > 60% | 2 | 5 |
-| `meluri-relayer` | HPA | Queue depth > 100 | 2 | 8 |
+| `velumx-api` | Horizontal Pod Autoscaler (HPA) | CPU > 70% OR req/s > 500 | 2 | 10 |
+| `velumx-mpc-ws` | StatefulSet with fixed pods (S1, S2) | Manual scale (stateful shares) | 2 | 2 |
+| `velumx-auth` | HPA | CPU > 60% | 2 | 5 |
+| `velumx-relayer` | HPA | Queue depth > 100 | 2 | 8 |
 | PostgreSQL | Connection pooling (PgBouncer) + read replicas | — | 1 primary + 1 replica | 1 primary + 3 replicas |
 | Redis | Cluster mode if memory > 4GB | — | 1 primary | 3 (cluster) |
 
@@ -1857,16 +1857,16 @@ volumes:
 
 ### 7.4 SDK CDN Delivery
 
-The browser SDK (`@meluri/mpc`) and the iframe auth modal are served via CDN:
+The browser SDK (`@velumx/mpc`) and the iframe auth modal are served via CDN:
 
 ```
                           ┌─────────────────┐
                           │   Cloudflare CDN │
                           │                 │
-   User Browser           │  cdn.meluri.xyz │
+   User Browser           │  cdn.velumx.xyz │
    ───────────────>       │                 │
-   <script src="https://   │  /sdk/mpc.js    │── Origin: meluri-cdn (K8s nginx)
-    cdn.meluri.xyz/       │  /sdk/mpc.mjs   │   or S3 bucket
+   <script src="https://   │  /sdk/mpc.js    │── Origin: velumx-cdn (K8s nginx)
+    cdn.velumx.xyz/       │  /sdk/mpc.mjs   │   or S3 bucket
     sdk/v0.1/mpc.js">     │  /auth/iframe.  │
                           │    html          │
                           └─────────────────┘
@@ -1879,7 +1879,7 @@ The browser SDK (`@meluri/mpc`) and the iframe auth modal are served via CDN:
 
 ```html
 <script
-  src="https://cdn.meluri.xyz/sdk/v0.1/mpc.js"
+  src="https://cdn.velumx.xyz/sdk/v0.1/mpc.js"
   integrity="sha384-<hash>"
   crossorigin="anonymous">
 </script>

@@ -1,0 +1,54 @@
+{
+  "title": "VelumX MPC — Auth Service",
+  "uid": "velumx-auth",
+  "panels": [
+    {
+      "title": "Login Rate by Provider",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(velumx_auth_login_total{provider=~\"$provider\"}[5m])"
+        }
+      ],
+      "yaxes": [{ "format": "reqps" }]
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(velumx_auth_errors_total[5m]) / rate(velumx_auth_requests_total[5m])"
+        }
+      ],
+      "yaxes": [{ "format": "percentunit", "max": 1 }]
+    },
+    {
+      "title": "Active Sessions",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "velumx_auth_active_sessions"
+        }
+      ]
+    },
+    {
+      "title": "P50/P95/P99 Latency",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(velumx_auth_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(velumx_auth_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(velumx_auth_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P99"
+        }
+      ],
+      "yaxes": [{ "format": "s" }]
+    }
+  ]
+}

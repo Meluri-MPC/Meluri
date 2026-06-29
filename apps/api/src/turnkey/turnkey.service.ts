@@ -31,10 +31,10 @@ export class TurnkeyService {
       timestampMs: String(Date.now()),
       organizationId: this.organizationId,
       parameters: {
-        subOrganizationName: `meluri-mpc-${appName}-${Date.now()}`,
+        subOrganizationName: `velumx-mpc-${appName}-${Date.now()}`,
         rootUsers: userIds.map((uid) => ({
           userName: uid,
-          userEmail: `${uid}@mpc.meluri.xyz`,
+          userEmail: `${uid}@mpc.velumx.xyz`,
           apiKeys: [],
           authenticators: [],
           oauthProviders: [],

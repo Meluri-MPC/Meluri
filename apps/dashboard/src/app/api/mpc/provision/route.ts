@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
@@ -19,10 +19,10 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.mpcOrganization.findUnique({ where: { apiKeyId } });
   if (existing) return NextResponse.json({ error: 'MPC already provisioned' }, { status: 400 });
 
-  // Provision via Meluri API backend (which calls Turnkey)
+  // Provision via VelumX API backend (which calls Turnkey)
   try {
-    const meluriApiUrl = process.env.MELURI_API_URL || 'http://localhost:4002/api/v1';
-    const res = await fetch(`${meluriApiUrl}/auth/mpc/provision`, {
+    const velumxApiUrl = process.env.VELUMX_API_URL || 'http://localhost:4002/api/v1';
+    const res = await fetch(`${velumxApiUrl}/auth/mpc/provision`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': `ml_placeholder` },
       body: JSON.stringify({ appName, allowedDomains }),

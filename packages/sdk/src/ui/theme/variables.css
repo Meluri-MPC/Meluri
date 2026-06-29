@@ -1,0 +1,155 @@
+:root {
+  /* ── Colors (Light Theme) ── */
+  --vx-color-primary: #6366f1;
+  --vx-color-primary-hover: #4f46e5;
+  --vx-color-primary-text: #ffffff;
+
+  --vx-color-success: #22c55e;
+  --vx-color-success-bg: #dcfce7;
+  --vx-color-success-text: #166534;
+
+  --vx-color-error: #ef4444;
+  --vx-color-error-bg: #fee2e2;
+  --vx-color-error-text: #991b1b;
+
+  --vx-color-warning: #f59e0b;
+  --vx-color-warning-bg: #fef3c7;
+  --vx-color-warning-text: #92400e;
+
+  --vx-color-info: #0ea5e9;
+  --vx-color-info-bg: #e0f2fe;
+  --vx-color-info-text: #075985;
+
+  /* Network colors */
+  --vx-color-network-mainnet: #22c55e;
+  --vx-color-network-testnet: #f59e0b;
+  --vx-color-network-devnet: #ef4444;
+
+  /* Background & Surface */
+  --vx-color-bg: #ffffff;
+  --vx-color-bg-secondary: #f8fafc;
+  --vx-color-surface: #ffffff;
+  --vx-color-surface-hover: #f1f5f9;
+  --vx-color-surface-raised: #ffffff;
+  --vx-color-overlay: rgba(15, 23, 42, 0.5);
+
+  /* Border */
+  --vx-color-border: #e2e8f0;
+  --vx-color-border-focus: #6366f1;
+
+  /* Text */
+  --vx-color-text: #0f172a;
+  --vx-color-text-secondary: #475569;
+  --vx-color-text-tertiary: #94a3b8;
+  --vx-color-text-inverse: #ffffff;
+
+  /* ── Spacing ── */
+  --vx-space-1: 4px;
+  --vx-space-2: 8px;
+  --vx-space-3: 12px;
+  --vx-space-4: 16px;
+  --vx-space-5: 20px;
+  --vx-space-6: 24px;
+  --vx-space-8: 32px;
+  --vx-space-10: 40px;
+  --vx-space-12: 48px;
+
+  /* ── Border Radius ── */
+  --vx-radius-sm: 6px;
+  --vx-radius-md: 8px;
+  --vx-radius-lg: 12px;
+  --vx-radius-xl: 16px;
+  --vx-radius-full: 9999px;
+
+  /* ── Typography ── */
+  --vx-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --vx-font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', Menlo, Courier, monospace;
+  --vx-font-size-xs: 11px;
+  --vx-font-size-sm: 13px;
+  --vx-font-size-base: 15px;
+  --vx-font-size-lg: 17px;
+  --vx-font-size-xl: 20px;
+  --vx-font-size-2xl: 24px;
+  --vx-font-weight-normal: 400;
+  --vx-font-weight-medium: 500;
+  --vx-font-weight-semibold: 600;
+  --vx-font-weight-bold: 700;
+  --vx-line-height: 1.5;
+
+  /* ── Shadows ── */
+  --vx-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --vx-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --vx-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --vx-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* ── Transitions ── */
+  --vx-transition-fast: 150ms ease;
+  --vx-transition-base: 200ms ease;
+  --vx-transition-slow: 300ms ease;
+
+  /* ── Sizing ── */
+  --vx-tap-target-min: 44px;
+  --vx-modal-max-width: 480px;
+  --vx-toast-duration: 3000ms;
+}
+
+/* ── Dark Theme ── */
+.vx-theme-dark {
+  --vx-color-primary: #818cf8;
+  --vx-color-primary-hover: #6366f1;
+  --vx-color-primary-text: #0f172a;
+
+  --vx-color-success: #4ade80;
+  --vx-color-success-bg: #052e16;
+  --vx-color-success-text: #bbf7d0;
+
+  --vx-color-error: #f87171;
+  --vx-color-error-bg: #450a0a;
+  --vx-color-error-text: #fecaca;
+
+  --vx-color-warning: #fbbf24;
+  --vx-color-warning-bg: #451a03;
+  --vx-color-warning-text: #fde68a;
+
+  --vx-color-info: #38bdf8;
+  --vx-color-info-bg: #082f49;
+  --vx-color-info-text: #bae6fd;
+
+  --vx-color-bg: #0f172a;
+  --vx-color-bg-secondary: #1e293b;
+  --vx-color-surface: #1e293b;
+  --vx-color-surface-hover: #334155;
+  --vx-color-surface-raised: #273548;
+  --vx-color-overlay: rgba(2, 6, 23, 0.7);
+
+  --vx-color-border: #334155;
+  --vx-color-border-focus: #818cf8;
+
+  --vx-color-text: #f1f5f9;
+  --vx-color-text-secondary: #94a3b8;
+  --vx-color-text-tertiary: #64748b;
+  --vx-color-text-inverse: #0f172a;
+
+  --vx-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --vx-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --vx-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --vx-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --vx-transition-fast: 0ms;
+    --vx-transition-base: 0ms;
+    --vx-transition-slow: 0ms;
+  }
+
+  .vx-spinner {
+    animation: none !important;
+  }
+
+  .vx-modal-enter,
+  .vx-modal-exit {
+    animation: none !important;
+  }
+}

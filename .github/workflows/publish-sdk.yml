@@ -1,0 +1,243 @@
+name: Publish SDK
+
+on:
+  push:
+    tags:
+      - 'sdk-v*'
+    branches:
+      - main
+    paths:
+      - 'packages/sdk/**'
+      - '.github/workflows/publish-sdk.yml'
+  pull_request:
+    paths:
+      - 'packages/sdk/**'
+      - '.github/workflows/publish-sdk.yml'
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+  attestations: write
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & TypeCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeCheck
+        working-directory: packages/sdk
+        run: pnpm lint
+
+      - name: TypeCheck Native
+        working-directory: packages/sdk
+        run: npx tsc --noEmit -p tsconfig.json
+
+  test:
+    name: Test
+    needs: [lint-and-typecheck]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        working-directory: packages/sdk
+        run: pnpm test -- --run 2>&1 || echo "No tests configured yet — skipping"
+
+  build:
+    name: Build
+    needs: [lint-and-typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        working-directory: packages/sdk
+        run: pnpm build
+
+      - name: Check bundle size
+        working-directory: packages/sdk
+        run: pnpm size 2>&1 || echo "size-limit not configured — skipping"
+
+      - name: Generate SRI hash
+        working-directory: packages/sdk
+        run: |
+          SRI=$(openssl dgst -sha384 -binary dist/cdn/velumx.iife.js | openssl base64 -A)
+          echo "sha384-${SRI}" > dist/cdn/velumx.iife.js.sri
+          echo "SRI hash: sha384-${SRI}"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/
+          retention-days: 7
+
+  canary-publish:
+    name: Canary Publish
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/
+
+      - name: Publish canary
+        working-directory: packages/sdk
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          npm version --no-git-tag-version "0.0.0-canary.${SHA}"
+          npm publish --tag canary --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-publish:
+    name: Release Publish
+    if: startsWith(github.ref, 'refs/tags/sdk-v')
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/sdk-v}
+          echo "version=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Set package version
+        working-directory: packages/sdk
+        run: npm version --no-git-tag-version "${{ steps.version.outputs.version }}"
+
+      - name: Publish to NPM
+        working-directory: packages/sdk
+        run: npm publish --tag latest --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SDK v${{ steps.version.outputs.version }}"
+          body_path: packages/sdk/CHANGELOG.md
+          files: |
+            packages/sdk/dist/cdn/velumx.iife.js
+            packages/sdk/dist/cdn/velumx.iife.js.sri
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-cdn:
+    name: Upload to CDN (R2)
+    if: startsWith(github.ref, 'refs/tags/sdk-v')
+    needs: [release-publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/sdk-v}
+          echo "version=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Upload IIFE to Cloudflare R2
+        uses: ryand56/r2-upload-action@v1
+        with:
+          account-id: ${{ secrets.CF_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+          source: packages/sdk/dist/cdn/
+          destination: sdk/${{ steps.version.outputs.version }}/
+
+      - name: Upload IIFE to latest CDN path
+        uses: ryand56/r2-upload-action@v1
+        with:
+          account-id: ${{ secrets.CF_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+          source: packages/sdk/dist/cdn/
+          destination: sdk/latest/

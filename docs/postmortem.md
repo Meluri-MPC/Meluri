@@ -1,6 +1,6 @@
-# Postmortem: Issues Encountered & Resolved
+﻿# Postmortem: Issues Encountered & Resolved
 
-This document catalogues every issue encountered during the development and deployment of Meluri MPC, with root causes and fixes.
+This document catalogues every issue encountered during the development and deployment of VelumX MPC, with root causes and fixes.
 
 ---
 
@@ -286,7 +286,7 @@ Also added `data-clerk-publishable-key` attribute to the script tag for proper C
 After clicking "Sign in with Google", the Clerk modal appeared but spun indefinitely.
 
 **Root Cause:**
-Google OAuth redirects the page (not just the modal). The `await clerk.openSignIn()` promise never resolved because the page reloaded mid-flow. The login handler was structured to `await meluri.login()` which called `await clerk.openSignIn()` — the promise was lost on redirect.
+Google OAuth redirects the page (not just the modal). The `await clerk.openSignIn()` promise never resolved because the page reloaded mid-flow. The login handler was structured to `await velumx.login()` which called `await clerk.openSignIn()` — the promise was lost on redirect.
 
 **Fix:**
 Restructured the login flow to handle OAuth redirects:
@@ -301,7 +301,7 @@ Restructured the login flow to handle OAuth redirects:
 ## 13. SDK Browser Compatibility: Node.js Crypto/Buffer
 
 **Symptom:**
-Building the demo Vite app failed because the SDK (`@meluri/mpc`) imported Node.js modules (`crypto`, `Buffer`) that don't exist in browsers.
+Building the demo Vite app failed because the SDK (`@velumx/mpc`) imported Node.js modules (`crypto`, `Buffer`) that don't exist in browsers.
 
 **Root Cause:**
 The SDK was designed as Node.js-only (CommonJS output) but was being imported into a browser Vite app.
@@ -315,7 +315,7 @@ Configured Vite aliases to use these polyfills:
 ```typescript
 resolve: {
   alias: {
-    '@meluri/mpc': path.resolve(__dirname, '../../packages/sdk/src'),
+    '@velumx/mpc': path.resolve(__dirname, '../../packages/sdk/src'),
     'crypto': path.resolve(__dirname, 'src/polyfills/crypto.ts'),
     'buffer': path.resolve(__dirname, 'src/polyfills/buffer.ts'),
   },
@@ -381,16 +381,16 @@ secp.etc.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
 
 **Symptom:**
 ```
-Access to fetch at 'https://meluri.onrender.com/api/v1/...' from origin 'http://localhost:5173' 
+Access to fetch at 'https://velumx.onrender.com/api/v1/...' from origin 'http://localhost:5173' 
 has been blocked by CORS policy
 ```
 And later:
 ```
-from origin 'https://meluri.netlify.app' has been blocked by CORS policy
+from origin 'https://velumx.netlify.app' has been blocked by CORS policy
 ```
 
 **Root Cause:**
-The API's CORS configuration only allowed `localhost:3000-3002`, `meluri.xyz`, `vercel.app`, and `onrender.com`. New origins (Vite dev server on 5173, Netlify deployments) were not included.
+The API's CORS configuration only allowed `localhost:3000-3002`, `velumx.xyz`, `vercel.app`, and `onrender.com`. New origins (Vite dev server on 5173, Netlify deployments) were not included.
 
 **Fix:**
 Added `localhost:5173`, a wildcard localhost regex, and `.netlify.app` to CORS origins:
@@ -401,9 +401,9 @@ app.enableCors({
     'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:5173',
-    'https://meluri.xyz',
+    'https://velumx.xyz',
     /\.vercel\.app$/,
-    /\.meluri\.xyz$/,
+    /\.velumx\.xyz$/,
     /\.onrender\.com$/,
     /\.netlify\.app$/,
     /^http:\/\/localhost:\d+$/,
@@ -431,7 +431,7 @@ Added `localStorage` persistence and auto-restore on mount:
 
 ```typescript
 useEffect(() => {
-  const saved = localStorage.getItem('meluri_demo_wallet');
+  const saved = localStorage.getItem('velumx_demo_wallet');
   if (saved) {
     const { identifier: savedId } = JSON.parse(saved);
     fetch(`${API_URL}/wallets/simple/${savedId}`)

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, Matches } from 'class-validator';
+import { IsString, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWalletDto {
@@ -15,10 +15,21 @@ export class CreateWalletDto {
   @IsString()
   userId: string;
 
+  @ApiPropertyOptional({ description: 'User-friendly wallet label' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  label?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   turnkeyWalletId?: string;
+
+  @ApiPropertyOptional({ description: 'BIP32 derivation path' })
+  @IsOptional()
+  @IsString()
+  derivationPath?: string;
 
   @ApiPropertyOptional({ enum: ['mainnet', 'testnet'] })
   @IsOptional()

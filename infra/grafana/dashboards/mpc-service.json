@@ -1,0 +1,62 @@
+{
+  "title": "VelumX MPC — MPC Service",
+  "uid": "velumx-mpc",
+  "panels": [
+    {
+      "title": "DKG Rate",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(velumx_mpc_dkg_total[5m])" }
+      ],
+      "yaxes": [{ "format": "ops" }]
+    },
+    {
+      "title": "Signing Rate by Chain",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(velumx_mpc_signing_total{chain=~\"$chain\"}[5m])"
+        }
+      ],
+      "yaxes": [{ "format": "ops" }]
+    },
+    {
+      "title": "Ceremony Duration (P50/P95)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(velumx_mpc_ceremony_duration_seconds_bucket[5m]))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(velumx_mpc_ceremony_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95"
+        }
+      ],
+      "yaxes": [{ "format": "s" }]
+    },
+    {
+      "title": "Failure Rate",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(velumx_mpc_errors_total[5m])" }
+      ],
+      "yaxes": [{ "format": "ops" }]
+    },
+    {
+      "title": "Peer Health",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "velumx_mpc_peers_connected"
+        }
+      ],
+      "thresholds": "2,3",
+      "mappingType": 1,
+      "valueMaps": [
+        { "op": "=", "text": "Degraded", "value": "2" },
+        { "op": "=", "text": "Healthy", "value": "3" }
+      ]
+    }
+  ]
+}

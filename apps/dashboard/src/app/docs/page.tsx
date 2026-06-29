@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+﻿import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
@@ -21,15 +21,15 @@ export default async function DocsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-2">SDK Documentation</h1>
-      <p className="text-gray-400 mb-8">Integrate Meluri MPC into your Stacks dApp in minutes</p>
+      <p className="text-gray-400 mb-8">Integrate VelumX MPC into your Stacks dApp in minutes</p>
 
       <div className="space-y-6">
         <Section title="Installation">
-          <CodeBlock>{`npm install @meluri/mpc @clerk/clerk-js`}</CodeBlock>
+          <CodeBlock>{`npm install @velumx/mpc @clerk/clerk-js`}</CodeBlock>
         </Section>
 
         <Section title="Quick Start">
-          <CodeBlock>{`import { MeluriMPC } from '@meluri/mpc';
+          <CodeBlock>{`import { VelumxMPC } from '@velumx/mpc';
 import { ClerkProvider } from '@clerk/clerk-react';
 
 // Wrap your app with ClerkProvider
@@ -41,34 +41,34 @@ function App() {
   );
 }
 
-// Initialize Meluri
-const meluri = new MeluriMPC({
+// Initialize VelumX
+const velumx = new VelumxMPC({
   apiKey: '${keyPlaceholder}',
   network: 'mainnet',
   clerkPublishableKey: 'pk_...',
 });
 
 // Authenticate user → creates MPC wallet automatically
-await meluri.login();
+await velumx.login();
 
 // Get the user's Stacks wallet
-const wallet = await meluri.getWallet();
+const wallet = await velumx.getWallet();
 console.log(wallet.stxAddress); // SP2A8G...
 
 // Check balance
-const { stx, tokens } = await meluri.getBalance();
+const { stx, tokens } = await velumx.getBalance();
 console.log(stx); // "10.5"`}</CodeBlock>
         </Section>
 
         <Section title="Send STX">
-          <CodeBlock>{`await meluri.sendSTX({
+          <CodeBlock>{`await velumx.sendSTX({
   recipient: 'SP2A8G6Z0BWNXGQNKSB1C5VNMBK4VEJFK5GR15CMH',
   amount: 1000000, // 1 STX in microSTX
 });`}</CodeBlock>
         </Section>
 
         <Section title="Send SIP-010 Token">
-          <CodeBlock>{`await meluri.sendToken({
+          <CodeBlock>{`await velumx.sendToken({
   contractAddress: 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.aeusdc',
   amount: '500000',  // in token's smallest unit
   recipient: 'SP2A8G...',
@@ -76,7 +76,7 @@ console.log(stx); // "10.5"`}</CodeBlock>
         </Section>
 
         <Section title="Send SIP-009 NFT">
-          <CodeBlock>{`await meluri.sendNFT({
+          <CodeBlock>{`await velumx.sendNFT({
   contractAddress: 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.bitflow-nft',
   tokenId: 42,
   recipient: 'SP2A8G...',
@@ -86,24 +86,24 @@ console.log(stx); // "10.5"`}</CodeBlock>
         <Section title="Session Keys (save costs)">
           <p className="text-gray-400 text-sm mb-3">Create a session key to sign multiple transactions without calling Turnkey each time. Saves ~$0.005 per transaction.</p>
           <CodeBlock>{`// Create a 30-minute session
-const { expiresAt } = await meluri.createSession(30);
+const { expiresAt } = await velumx.createSession(30);
 
 // Check session status
-const status = meluri.getSessionStatus();
+const status = velumx.getSessionStatus();
 // { active: true, remainingMinutes: 27 }
 
 // All subsequent sends use session key (free signing)
-await meluri.sendSTX({ recipient: 'SP...', amount: 1000000 });
-await meluri.sendToken({ contractAddress: 'SP...', amount: '1000', recipient: 'SP...' });
+await velumx.sendSTX({ recipient: 'SP...', amount: 1000000 });
+await velumx.sendToken({ contractAddress: 'SP...', amount: '1000', recipient: 'SP...' });
 // These cost $0 in Turnkey fees
 
 // Session auto-clears on logout
-await meluri.logout();`}</CodeBlock>
+await velumx.logout();`}</CodeBlock>
         </Section>
 
         <Section title="Batched Transactions">
           <p className="text-gray-400 text-sm mb-3">Send multiple transactions in one API call.</p>
-          <CodeBlock>{`const results = await meluri.batchSend([
+          <CodeBlock>{`const results = await velumx.batchSend([
   { type: 'stx', params: { recipient: 'SP...', amount: 1000000 } },
   { type: 'token', params: { contractAddress: 'SP...aeusdc', amount: '500000', recipient: 'SP...' } },
 ]);
@@ -112,7 +112,36 @@ await meluri.logout();`}</CodeBlock>
 
         <Section title="Event Listeners">
           <CodeBlock>{`// Coming soon: subscribe to wallet and transaction events
-// meluri.on('transaction', (tx) => console.log(tx));`}</CodeBlock>
+// velumx.on('transaction', (tx) => console.log(tx));`}</CodeBlock>
+        </Section>
+
+        <Section title="Troubleshooting">
+          <div className="space-y-4 text-sm">
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">"Not authenticated. Call login() first."</h3>
+              <p className="text-gray-400">You called a wallet method before authenticating. Call <code className="text-velumx-400 bg-gray-800 px-1 rounded">await velumx.login()</code> first.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">"Clerk not loaded"</h3>
+              <p className="text-gray-400">Ensure your app is wrapped with <code className="text-velumx-400 bg-gray-800 px-1 rounded">{`<ClerkProvider>`}</code>. VelumX uses Clerk for authentication.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">"Could not determine organization ID"</h3>
+              <p className="text-gray-400">Your Turnkey MPC is not provisioned. Go to <a href="/mpc" className="text-velumx-400 hover:underline">MPC Config</a> and click "Provision MPC Infrastructure".</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">Rate limit (429)</h3>
+              <p className="text-gray-400">You exceeded 100 requests/minute. Implement exponential backoff or batch your requests.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">"Wallet not found" (401 on /tx/send)</h3>
+              <p className="text-gray-400">The sender address does not belong to your organization. Verify the wallet was created with your API key and that the address is correct.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-400 mb-1">TypeScript errors with React subpath</h3>
+              <p className="text-gray-400">Make sure your <code className="text-velumx-400 bg-gray-800 px-1 rounded">tsconfig.json</code> has <code className="text-velumx-400 bg-gray-800 px-1 rounded">"moduleResolution": "bundler"</code> for subpath exports to work.</p>
+            </div>
+          </div>
         </Section>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+﻿import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { ApiKeyManager } from '@/components/api-key-manager';
@@ -47,7 +47,7 @@ export default async function ApiKeysPage() {
                   {key.keyPrefix}... &middot; Created {new Date(key.createdAt).toLocaleDateString()}
                 </p>
                 {key.mpcOrg && (
-                  <p className="text-xs text-meluri-400 mt-1">
+                  <p className="text-xs text-velumx-400 mt-1">
                     MPC enabled — {key.mpcOrg.walletCount} wallets
                   </p>
                 )}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Plus, Copy, Check, X } from 'lucide-react';
@@ -54,7 +54,7 @@ export function ApiKeyManager({ developerId, initialKeys }: { developerId: strin
       <button
         onClick={() => setShowCreate(true)}
         disabled={keys.filter((k) => k.status === 'Active').length >= 5}
-        className="flex items-center gap-2 px-4 py-2 bg-meluri-600 hover:bg-meluri-700 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
       >
         <Plus size={16} /> New Key
       </button>
@@ -68,12 +68,12 @@ export function ApiKeyManager({ developerId, initialKeys }: { developerId: strin
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Key name (e.g. production, staging)"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-meluri-500"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-velumx-500"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200">Cancel</button>
-              <button onClick={handleCreate} disabled={creating || !name.trim()} className="px-4 py-2 bg-meluri-600 hover:bg-meluri-700 disabled:opacity-50 rounded-lg text-sm">
+              <button onClick={handleCreate} disabled={creating || !name.trim()} className="px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm">
                 {creating ? 'Creating...' : 'Create'}
               </button>
             </div>
@@ -90,7 +90,7 @@ export function ApiKeyManager({ developerId, initialKeys }: { developerId: strin
             </div>
             <p className="text-sm text-gray-400 mb-3">Copy this key now. You won&apos;t be able to see it again.</p>
             <div className="bg-gray-950 border border-gray-800 rounded-lg p-3 flex items-center justify-between mb-4">
-              <code className="text-sm text-meluri-400 break-all mr-2">{newKey}</code>
+              <code className="text-sm text-velumx-400 break-all mr-2">{newKey}</code>
               <button
                 onClick={() => { navigator.clipboard.writeText(newKey); setCopied(true); toast.success('Copied!'); }}
                 className="p-1.5 hover:bg-gray-800 rounded"

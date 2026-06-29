@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "VelumX MPC React Native",
+    "slug": "velumx-mpc-rn-example",
+    "version": "1.0.0",
+    "scheme": "velumx"
+  }
+}

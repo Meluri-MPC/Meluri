@@ -1,12 +1,22 @@
-export interface MeluriMPCAuth {
+export interface VelumxMPCAuth {
   getSession(): Promise<{ userId: string; sessionToken: string }>;
-  login(): Promise<{ userId: string; sessionToken: string }>;
+  login(provider?: string): Promise<{ userId: string; sessionToken: string }>;
   logout(): Promise<void>;
 }
 
-export interface MeluriMPCConfig {
+export interface AuthSession {
+  userId: string;
+  sessionToken: string;
+  provider: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+  expiresAt: string;
+}
+
+export interface VelumxMPCConfig {
   apiKey: string;
-  auth: MeluriMPCAuth;
+  auth: VelumxMPCAuth;
   network?: 'mainnet' | 'testnet';
   backendUrl?: string;
 }

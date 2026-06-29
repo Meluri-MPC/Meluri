@@ -2,7 +2,7 @@ import { TurnkeyClient } from '@turnkey/http';
 import { IframeStamper } from '@turnkey/iframe-stamper';
 
 const TK_IFRAME_URL = 'https://auth.turnkey.com';
-const IFRAME_ID = 'meluri-turnkey-iframe';
+const IFRAME_ID = 'velumx-turnkey-iframe';
 
 export class MpcTurnkey {
   private client: TurnkeyClient | null = null;
@@ -71,10 +71,10 @@ export class MpcTurnkey {
   private async getClient(): Promise<TurnkeyClient> {
     if (this.client) return this.client;
 
-    let container = document.getElementById('meluri-turnkey-container');
+    let container = document.getElementById('velumx-turnkey-container');
     if (!container) {
       container = document.createElement('div');
-      container.id = 'meluri-turnkey-container';
+      container.id = 'velumx-turnkey-container';
       container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
       document.body.appendChild(container);
     }

@@ -1,17 +1,111 @@
 {
-  "name": "@meluri/mpc",
+  "name": "@velumx/mpc",
   "version": "0.1.0",
-  "description": "Meluri MPC SDK — Stacks-native embedded wallet. Like Privy for Stacks.",
-  "main": "dist/index.js",
+  "description": "VelumX MPC SDK — Stacks-native embedded wallet. Like Privy for Stacks.",
+  "type": "module",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.mts",
+        "default": "./dist/react/index.mjs"
+      },
+      "require": {
+        "types": "./dist/react/index.d.cts",
+        "default": "./dist/react/index.cjs"
+      }
+    },
+    "./wallets": {
+      "import": {
+        "types": "./dist/wallets/index.d.mts",
+        "default": "./dist/wallets/index.mjs"
+      },
+      "require": {
+        "types": "./dist/wallets/index.d.cts",
+        "default": "./dist/wallets/index.cjs"
+      }
+    },
+    "./ui": {
+      "import": {
+        "types": "./dist/ui/index.d.mts",
+        "default": "./dist/ui/index.mjs"
+      },
+      "require": {
+        "types": "./dist/ui/index.d.cts",
+        "default": "./dist/ui/index.cjs"
+      }
+    },
+    "./native": {
+      "import": {
+        "types": "./dist/native/index.d.mts",
+        "default": "./dist/native/index.mjs"
+      },
+      "require": {
+        "types": "./dist/native/index.d.cts",
+        "default": "./dist/native/index.cjs"
+      }
+    },
+    "./cdn": "./dist/cdn/velumx.iife.js"
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "react": [
+        "./dist/react/index.d.ts"
+      ],
+      "wallets": [
+        "./dist/wallets/index.d.ts"
+      ],
+      "ui": [
+        "./dist/ui/index.d.ts"
+      ],
+      "native": [
+        "./dist/native/index.d.ts"
+      ]
+    }
+  },
+  "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "lint": "tsc --noEmit"
+    "build": "tsup",
+    "build:cdn": "tsup --config tsup.iife.ts",
+    "build:native": "tsup --config tsup.native.ts",
+    "build:all": "tsup && tsup --config tsup.iife.ts && tsup --config tsup.native.ts",
+    "build:dev": "tsup --config tsup.dev.ts",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "tsup",
+    "size": "size-limit",
+    "size:cdn": "gzip -c dist/cdn/velumx.iife.js | wc -c"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@noble/secp256k1": "^2.2.0",
@@ -22,16 +116,54 @@
     "@turnkey/iframe-stamper": "^2.11.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.40",
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^26.0.1",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "jsdom": "^25.0.0",
+    "size-limit": "^11.2.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
     "typescript": "^5.4.0"
   },
+  "size-limit": [
+    {
+      "name": "Core (ESM)",
+      "path": "dist/index.mjs",
+      "limit": "50 KB",
+      "gzip": true
+    },
+    {
+      "name": "React (ESM)",
+      "path": "dist/react/index.mjs",
+      "limit": "30 KB",
+      "gzip": true
+    },
+    {
+      "name": "UI + Core (ESM)",
+      "path": [
+        "dist/index.mjs",
+        "dist/react/index.mjs"
+      ],
+      "limit": "100 KB",
+      "gzip": true
+    },
+    {
+      "name": "IIFE (CDN)",
+      "path": "dist/cdn/velumx.iife.js",
+      "limit": "120 KB",
+      "gzip": true
+    }
+  ],
   "keywords": [
     "stacks",
     "mpc",
     "wallet",
     "embedded",
     "web3",
-    "meluri"
+    "velumx"
   ],
   "license": "MIT"
 }

@@ -1,19 +1,28 @@
 {
-  "name": "meluri-mpc",
+  "name": "velumx-mpc",
   "private": true,
-  "description": "Meluri MPC — Stacks-native embedded wallet infrastructure. Like Privy for Stacks.",
+  "description": "VelumX MPC — Stacks-native embedded wallet infrastructure. Like Privy for Stacks.",
   "scripts": {
-    "dev": "pnpm --filter @meluri/api dev",
-    "build": "pnpm --filter @meluri/api build && pnpm --filter @meluri/mpc build",
-    "sdk:dev": "pnpm --filter @meluri/mpc dev",
-    "dashboard:dev": "pnpm --filter @meluri/dashboard dev",
-    "demo:dev": "pnpm --filter @meluri/demo dev",
-    "db:migrate": "pnpm --filter @meluri/api db:migrate",
-    "db:generate": "pnpm --filter @meluri/api db:generate",
-    "db:studio": "pnpm --filter @meluri/api db:studio"
+    "dev": "pnpm --filter @velumx/api dev",
+    "build": "pnpm --filter @velumx/mpc build",
+    "sdk:dev": "pnpm --filter @velumx/mpc dev",
+    "sdk:build": "pnpm --filter @velumx/mpc build",
+    "sdk:lint": "pnpm --filter @velumx/mpc lint",
+    "sdk:size": "pnpm --filter @velumx/mpc size",
+    "dashboard:dev": "pnpm --filter @velumx/dashboard dev",
+    "demo:dev": "pnpm --filter @velumx/demo dev",
+    "db:migrate": "pnpm --filter @velumx/api db:migrate",
+    "db:generate": "pnpm --filter @velumx/api db:generate",
+    "db:studio": "pnpm --filter @velumx/api db:studio",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
   },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0"
   }
 }

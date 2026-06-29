@@ -1,0 +1,109 @@
+# Synthetic Monitoring Configuration
+
+## Uptime Checks
+
+Checks run every 60 seconds from 3 geographic regions (US East, EU West, AP Southeast).
+
+### HTTP Endpoints
+
+| Name | URL | Expected | Timeout |
+|------|-----|----------|---------|
+| API Health | `GET https://api.velumx.xyz/api/v1/health` | 200 OK, `{"status":"ok"}` | 5s |
+| API Error Rate | `GET https://api.velumx.xyz/api/v1/health` | Response time < 2s | 5s |
+| JWKS | `GET https://api.velumx.xyz/.well-known/jwks.json` | 200 OK, valid JSON | 5s |
+| Dashboard | `GET https://velumx.xyz` | 200 OK | 10s |
+| CDN SDK | `GET https://cdn.velumx.xyz/sdk/latest/velumx.iife.js` | 200 OK, JS content | 5s |
+
+### WebSocket Endpoint
+
+| Name | URL | Expected | Timeout |
+|------|-----|----------|---------|
+| MPC Node 0 | `wss://mpc-node-0.velumx.xyz:8080` | Connection established | 10s |
+| MPC Node 1 | `wss://mpc-node-1.velumx.xyz:8080` | Connection established | 10s |
+| MPC Node 2 | `wss://mpc-node-2.velumx.xyz:8080` | Connection established | 10s |
+
+## Synthetic User Journey
+
+Runs every 15 minutes. Fully scripted end-to-end test:
+
+```yaml
+name: "User Journey: Register → Wallet → Sign → Verify"
+schedule: "*/15 * * * *"
+locations: ["us-east1", "eu-west2"]
+steps:
+  - name: "Register developer"
+    request:
+      method: POST
+      url: https://api.velumx.xyz/api/v1/auth/register
+      headers:
+        Content-Type: application/json
+      body:
+        email: "synthetic-${TIMESTAMP}@velumx-test.xyz"
+        name: "Synthetic Test"
+    assert:
+      json: "$.id"
+      status: 201
+
+  - name: "Create API key"
+    request:
+      method: POST
+      url: https://api.velumx.xyz/api/v1/auth/api-keys
+      headers:
+        Content-Type: application/json
+        x-api-key: "${API_KEY}"
+      body:
+        name: "Synthetic Key"
+    assert:
+      json: "$.rawKey"
+      status: 201
+
+  - name: "Provision MPC"
+    request:
+      method: POST
+      url: https://api.velumx.xyz/api/v1/auth/mpc/provision
+      headers:
+        Content-Type: application/json
+        x-api-key: "${GENERATED_KEY}"
+      body:
+        appName: "Synthetic Test"
+        allowedDomains: ["https://test.velumx.xyz"]
+    assert:
+      status: 201
+
+  - name: "Verify health"
+    request:
+      method: GET
+      url: https://api.velumx.xyz/api/v1/health
+    assert:
+      json: "$.status=ok"
+      status: 200
+```
+
+## SLA Tracking
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| API Uptime | 99.95% (monthly) | Uptime checks / total checks |
+| MPC Uptime | 99.9% (monthly) | WebSocket connection success rate |
+| P50 API Latency | < 200ms | Synthetic transaction timing |
+| P99 API Latency | < 2s | Synthetic transaction timing |
+
+## Status Page
+
+Public status page at `status.velumx.xyz` showing:
+- Current service status (operational/degraded/outage)
+- Incident history (last 90 days)
+- Uptime percentage (last 30 days)
+- Scheduled maintenance windows
+- Subscribe to updates (email/SMS/RSS)
+
+### Status Page Components
+
+| Component | Group |
+|-----------|-------|
+| API Service | Core Services |
+| MPC Service | Core Services |
+| Dashboard | Core Services |
+| CDN | Core Services |
+| Hiro API (upstream) | Dependencies |
+| Turnkey API (upstream) | Dependencies |

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from 'react-hot-toast';
 import { Sidebar } from '@/components/sidebar';
@@ -7,7 +7,7 @@ import './globals.css';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Meluri MPC — Developer Dashboard',
+  title: 'VelumX MPC — Developer Dashboard',
   description: 'Stacks-native embedded wallet infrastructure',
 };
 

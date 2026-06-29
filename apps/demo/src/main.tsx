@@ -5,7 +5,7 @@ import './index.css';
 
 function Root() {
   return (
-    <React.Suspense fallback={<div style={{color:'#fff',padding:40,textAlign:'center'}}>Loading Meluri...</div>}>
+    <React.Suspense fallback={<div style={{color:'#fff',padding:40,textAlign:'center'}}>Loading VelumX...</div>}>
       <App />
     </React.Suspense>
   );

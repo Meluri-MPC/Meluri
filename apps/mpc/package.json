@@ -1,0 +1,37 @@
+{
+  "name": "@velumx/mpc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VelumX MPC Service — Threshold Signature Scheme implementation for Stacks",
+  "scripts": {
+    "spike": "npx tsx src/tss/spike.ts",
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "nest start",
+    "start:prod": "node dist/main"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.1",
+    "@nestjs/common": "^10.4.0",
+    "@nestjs/config": "^3.2.0",
+    "@nestjs/core": "^10.4.0",
+    "@nestjs/microservices": "^10.4.22",
+    "@nestjs/platform-express": "^10.4.0",
+    "@noble/hashes": "^1.7.0",
+    "@noble/secp256k1": "^2.2.0",
+    "prom-client": "^15.1.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.0",
+    "@nestjs/schematics": "^10.1.0",
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@types/node": "^26.0.1",
+    "size-limit": "^11.2.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  }
+}

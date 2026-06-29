@@ -1,0 +1,26 @@
+# Exclude test files and known false positives
+**/*.spec.ts
+**/*.test.ts
+**/test/
+**/tests/
+**/fixtures/
+**/snapshots/
+**/dist/
+**/node_modules/
+**/.next/
+pnpm-lock.yaml
+
+# Dependabot should monitor these
+*.lock
+
+# Don't scan lock files
+*.lock
+
+# Ignore build artifacts
+**/dist/**
+**/build/**
+**/.turbo/**
+
+# Ignore generated files
+apps/api/src/generated/
+apps/api/prisma/schema.prisma

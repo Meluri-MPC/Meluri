@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: velumx-mpc
+  labels:
+    app: velumx-mpc
+spec:
+  serviceName: velumx-mpc-headless
+  replicas: 3
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: velumx-mpc
+  template:
+    metadata:
+      labels:
+        app: velumx-mpc
+    spec:
+      containers:
+        - name: mpc-node
+          image: velumx-mpc:latest
+          ports:
+            - containerPort: 8080
+              name: ws
+              protocol: TCP
+            - containerPort: 8081
+              name: gossip
+              protocol: TCP
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_INDEX
+              value: "$(POD_ORDINAL)"
+          envFrom:
+            - secretRef:
+                name: velumx-secrets
+            - configMapRef:
+                name: velumx-config
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          volumeMounts:
+            - name: mpc-data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: mpc-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: velumx-mpc
+spec:
+  selector:
+    app: velumx-mpc
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: ws
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: velumx-mpc-headless
+spec:
+  clusterIP: None
+  selector:
+    app: velumx-mpc
+  ports:
+    - port: 8081
+      targetPort: 8081
+      name: gossip
+      protocol: TCP
+    - port: 8080
+      targetPort: 8080
+      name: ws
+      protocol: TCP

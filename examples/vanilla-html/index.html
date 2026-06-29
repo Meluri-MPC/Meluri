@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VelumX MPC — Vanilla HTML</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h1 { margin-bottom: 24px; }
+    .card { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .card p { margin-bottom: 8px; }
+    button { padding: 12px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; background: #7C3AED; color: white; }
+    button:hover { background: #6D28D9; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.secondary { background: #e5e7eb; color: #1f2937; font-size: 14px; padding: 8px 16px; }
+    input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; width: 100%; }
+    .form-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .form-row input { flex: 1; }
+    .form-row button { font-size: 14px; padding: 8px 16px; }
+    .tx-item { border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 4px; }
+    .tx-item p { font-size: 14px; }
+    .tx-hash { font-size: 12px !important; color: #666; word-break: break-all; }
+    .success { color: #059669; }
+    .error { color: #dc2626; }
+    .muted { color: #666; margin-top: 24px; font-size: 14px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>VelumX MPC — Vanilla HTML</h1>
+
+  <div id="login-screen">
+    <button id="login-btn">Login with VelumX</button>
+    <p class="muted">
+      This demo uses the CDN bundle. Zero build tools required.
+    </p>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="card" id="wallet-info">
+      <p><strong>Address:</strong> <span id="address"></span></p>
+      <p><strong>Network:</strong> <span id="network"></span></p>
+      <p><strong>Balance:</strong> <span id="balance">Loading...</span> STX</p>
+    </div>
+
+    <h2>Send STX</h2>
+    <div class="form-row">
+      <input id="recipient" placeholder="Recipient (SP2...)" />
+      <input id="amount" placeholder="Amount (STX)" type="number" style="width: 150px; flex: none;" />
+      <button id="send-btn">Send</button>
+    </div>
+    <p id="tx-status"></p>
+
+    <h2>Recent Transactions</h2>
+    <div id="tx-list"><p>No transactions yet.</p></div>
+
+    <button class="secondary" id="logout-btn" style="margin-top: 20px;">Logout</button>
+  </div>
+
+  <!-- Replace with your CDN URL in production -->
+  <script type="module">
+    import { VelumxMPC } from '../../packages/sdk/src/index.ts';
+
+    window.VelumxMPC = VelumxMPC;
+  </script>
+  <script type="module">
+    const { VelumxMPC } = window;
+
+    const velumx = new VelumxMPC({
+      apiKey: 'vx_sk_demo',
+      auth: {
+        async getSession() {
+          const s = localStorage.getItem('velumx_demo_session');
+          return s ? JSON.parse(s) : null;
+        },
+        async login() {
+          const session = { userId: `demo-${Date.now()}`, sessionToken: 'demo-token' };
+          localStorage.setItem('velumx_demo_session', JSON.stringify(session));
+          return session;
+        },
+        async logout() {
+          localStorage.removeItem('velumx_demo_session');
+        },
+      },
+      network: 'testnet',
+    });
+
+    const loginScreen = document.getElementById('login-screen');
+    const dashboard = document.getElementById('dashboard');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const sendBtn = document.getElementById('send-btn');
+
+    let wallet = null;
+
+    loginBtn.addEventListener('click', async () => {
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Loading...';
+      try {
+        wallet = await velumx.login();
+        loginScreen.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        await refreshDashboard();
+      } catch (err) {
+        document.getElementById('tx-status').textContent = 'Error: ' + err.message;
+      }
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Login with VelumX';
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await velumx.logout();
+      wallet = null;
+      dashboard.classList.add('hidden');
+      loginScreen.classList.remove('hidden');
+    });
+
+    sendBtn.addEventListener('click', async () => {
+      const recipient = document.getElementById('recipient').value;
+      const amountStx = document.getElementById('amount').value;
+      if (!recipient || !amountStx) { alert('Enter recipient and amount'); return; }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      const status = document.getElementById('tx-status');
+      try {
+        const { txid } = await velumx.sendSTX({
+          recipient,
+          amount: Number(amountStx) * 1_000_000,
+        });
+        status.className = 'success';
+        status.textContent = `Sent! TXID: ${txid}`;
+        document.getElementById('recipient').value = '';
+        document.getElementById('amount').value = '';
+        await refreshDashboard();
+      } catch (err) {
+        status.className = 'error';
+        status.textContent = 'Error: ' + err.message;
+      }
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    });
+
+    async function refreshDashboard() {
+      if (!wallet) return;
+      document.getElementById('address').textContent = wallet.stxAddress;
+      document.getElementById('network').textContent = wallet.network;
+
+      try {
+        const { stx } = await velumx.getBalance();
+        document.getElementById('balance').textContent = stx;
+        const txs = await velumx.getTransactionHistory();
+        const txList = document.getElementById('tx-list');
+        if (txs.length === 0) {
+          txList.innerHTML = '<p>No transactions yet.</p>';
+        } else {
+          txList.innerHTML = txs.map((tx) => `
+            <div class="tx-item">
+              <p><strong>${tx.type}</strong> — ${tx.status}</p>
+              <p class="tx-hash">${tx.txid}</p>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        document.getElementById('balance').textContent = 'Error';
+      }
+    }
+  </script>
+</body>
+</html>

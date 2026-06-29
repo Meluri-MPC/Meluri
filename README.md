@@ -1,4 +1,4 @@
-# Meluri MPC
+# VelumX MPC
 
 Stacks-native embedded wallet infrastructure — **like Privy for Stacks**.
 
@@ -6,7 +6,7 @@ Stacks-native embedded wallet infrastructure — **like Privy for Stacks**.
 
 ## Demo
 
-Test the custodial wallet live: **https://meluri-demo.netlify.app** (or local: `pnpm demo:dev` → `http://localhost:5173`)
+Test the custodial wallet live: **https://velumx-demo.netlify.app** (or local: `pnpm demo:dev` → `http://localhost:5173`)
 
 1. Enter any email or username
 2. Wallet created instantly (server-side Stacks key generation)
@@ -16,7 +16,7 @@ Test the custodial wallet live: **https://meluri-demo.netlify.app** (or local: `
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                    SDK (@meluri/mpc)              │
+│                    SDK (@velumx/mpc)              │
 │  React hooks · Core API · Auth modal · Iframe     │
 └──────────────────────┬───────────────────────────┘
                        │
@@ -38,11 +38,11 @@ Test the custodial wallet live: **https://meluri-demo.netlify.app** (or local: `
 
 ## How VelumX Sponsors Transactions
 
-Meluri uses [VelumX](https://velumx.xyz) — a Relayer-as-a-Service — to sponsor all transaction gas fees. Users never need STX to send tokens.
+VelumX MPC uses [VelumX](https://velumx.xyz) — a Relayer-as-a-Service — to sponsor all transaction gas fees. Users never need STX to send tokens.
 
 ```
-1. Meluri builds unsigned sponsored tx  (sponsored: true)
-2. Meluri signs origin                  (TransactionSigner.signOrigin)
+1. VelumX MPC builds unsigned sponsored tx  (sponsored: true)
+2. VelumX MPC signs origin                  (TransactionSigner.signOrigin)
 3. → VelumX co-signs sponsor           (velumx.sponsor)
 4. → VelumX broadcasts to Stacks       (txid returned)
 ```
@@ -60,7 +60,7 @@ apps/
 └── demo/           Custodial wallet demo — sign in, balance, send STX/tokens
 
 packages/
-└── sdk/            Client SDK — MeluriMPC class, React hooks, Turnkey integration
+└── sdk/            Client SDK — VelumxMPC class, React hooks, Turnkey integration
 
 docs/
 ├── velumx-integration.md   VelumX relayer setup and debugging
@@ -98,7 +98,7 @@ pnpm demo:dev
 
 ## Deployment
 
-- **API**: [Render](https://render.com) — `pnpm install && pnpm --filter @meluri/api build:prod`
+- **API**: [Render](https://render.com) — `pnpm install && pnpm --filter @velumx/api build:prod`
 - **Dashboard**: [Vercel](https://vercel.com) — Next.js, root dir `apps/dashboard`
 - **Demo**: [Netlify](https://netlify.com) — Vite, auto-detected via `netlify.toml`
 

@@ -1,0 +1,42 @@
+{
+  "title": "VelumX MPC — Business Metrics",
+  "uid": "velumx-business",
+  "panels": [
+    {
+      "title": "New Users / Day",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(velumx_users_created_total[1d]) * 86400" }
+      ]
+    },
+    {
+      "title": "Wallets Created / Day",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(velumx_wallets_created_total[1d]) * 86400" }
+      ]
+    },
+    {
+      "title": "Active Developers",
+      "type": "stat",
+      "targets": [
+        { "expr": "velumx_active_developers" }
+      ]
+    },
+    {
+      "title": "Transaction Volume (STX)",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(velumx_tx_volume_stx[1d]) * 86400" }
+      ],
+      "yaxes": [{ "format": "STX" }]
+    },
+    {
+      "title": "Total Wallets",
+      "type": "stat",
+      "targets": [
+        { "expr": "velumx_total_wallets" }
+      ]
+    }
+  ]
+}

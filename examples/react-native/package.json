@@ -1,0 +1,27 @@
+{
+  "name": "velumx-react-native-example",
+  "version": "1.0.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.21.0",
+    "@velumx/mpc": "workspace:*",
+    "expo": "~50.0.0",
+    "expo-crypto": "~12.8.0",
+    "expo-status-bar": "~1.11.0",
+    "expo-web-browser": "~12.8.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.0",
+    "typescript": "^5.4.0"
+  }
+}

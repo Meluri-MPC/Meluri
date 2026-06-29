@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm --filter @meluri/demo build"
+  command = "pnpm install --frozen-lockfile && pnpm --filter @velumx/demo build"
   publish = "apps/demo/dist"
 
 [[redirects]]

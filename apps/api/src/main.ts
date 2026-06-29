@@ -12,9 +12,9 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://localhost:3002',
       'http://localhost:5173',
-      'https://meluri.xyz',
+      'https://velumx.xyz',
       /\.vercel\.app$/,
-      /\.meluri\.xyz$/,
+      /\.velumx\.xyz$/,
       /\.onrender\.com$/,
       /\.netlify\.app$/,
       /^http:\/\/localhost:\d+$/,
@@ -29,7 +29,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   const config = new DocumentBuilder()
-    .setTitle('Meluri MPC API')
+    .setTitle('VelumX MPC API')
     .setDescription('Stacks-native embedded wallet infrastructure — like Privy for Stacks')
     .setVersion('0.1.0')
     .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
@@ -39,7 +39,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4002;
   await app.listen(port);
-  console.log(`Meluri MPC API → http://localhost:${port}`);
+  console.log(`VelumX MPC API → http://localhost:${port}`);
   console.log(`Swagger docs  → http://localhost:${port}/docs`);
 }
 

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package velumx.mpc.v1;
+
+// ─── Signing Service ─────────────────────────────────────────────────
+
+service SigningService {
+  // Sign a transaction or message using threshold ECDSA.
+  rpc Sign(SignRequest) returns (SignResponse);
+
+  // Get the status of a signing ceremony.
+  rpc GetCeremonyStatus(CeremonyStatusRequest) returns (CeremonyStatusResponse);
+
+  // Cancel a pending signing ceremony.
+  rpc CancelCeremony(CancelCeremonyRequest) returns (CancelCeremonyResponse);
+}
+
+// ─── Signing Request ─────────────────────────────────────────────────
+
+message SignRequest {
+  // Unique identifier for the wallet.
+  string wallet_id = 1;
+
+  // Message to sign (raw bytes). For Stacks, this is the SHA-256 sighash.
+  bytes message = 2;
+
+  // Blockchain identifier (stacks, bitcoin, ethereum, solana).
+  string chain = 3;
+
+  // Joint public key (hex-encoded compressed point).
+  string public_key = 4;
+
+  // Tenant identifier for multi-tenancy.
+  string tenant_id = 5;
+
+  // Developer API key.
+  string api_key = 6;
+
+  // Idempotency key to prevent duplicate signings.
+  string idempotency_key = 7;
+}
+
+// ─── Signing Response ────────────────────────────────────────────────
+
+message SignResponse {
+  // DER-encoded ECDSA signature (hex string).
+  string signature = 1;
+
+  // Signature component r (bigint as decimal string).
+  string r = 2;
+
+  // Signature component s (bigint as decimal string).
+  string s = 3;
+
+  // Recovery ID (0 or 1).
+  int32 recovery_id = 4;
+
+  // Unique ceremony identifier.
+  string ceremony_id = 5;
+
+  // Chain the signature was produced for.
+  string chain = 6;
+
+  // Unix timestamp (milliseconds) when the signature was produced.
+  int64 timestamp = 7;
+
+  // Duration of the signing ceremony in milliseconds.
+  int32 duration_ms = 8;
+}
+
+// ─── Ceremony Status ─────────────────────────────────────────────────
+
+message CeremonyStatusRequest {
+  string ceremony_id = 1;
+  string tenant_id = 2;
+}
+
+message CeremonyStatusResponse {
+  string ceremony_id = 1;
+  string status = 2;  // selecting, in_progress, completed, failed, timed_out, fallback
+  repeated int32 selected_parties = 3;
+  int64 started_at = 4;
+  int64 last_activity = 5;
+  string error = 6;
+}
+
+// ─── Cancel Ceremony ─────────────────────────────────────────────────
+
+message CancelCeremonyRequest {
+  string ceremony_id = 1;
+  string tenant_id = 2;
+}
+
+message CancelCeremonyResponse {
+  bool cancelled = 1;
+  string ceremony_id = 2;
+}

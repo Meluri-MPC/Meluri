@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: velumx-prod
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: velumx-config
+    behavior: merge
+    literals:
+      - node-env="production"
+      - velumx-network="mainnet"

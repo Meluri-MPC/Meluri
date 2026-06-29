@@ -1,17 +1,20 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignOutButton, useUser } from '@clerk/nextjs';
-import { LayoutDashboard, Key, Wallet, Shield, BookOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, Key, Wallet, Shield, BookOpen, BarChart3, Users, CreditCard, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const nav = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/api-keys', label: 'API Keys', icon: Key },
   { href: '/mpc', label: 'MPC Config', icon: Shield },
   { href: '/wallets', label: 'Wallets', icon: Wallet },
   { href: '/docs', label: 'SDK Docs', icon: BookOpen },
+  { href: '/team', label: 'Team', icon: Users },
+  { href: '/billing', label: 'Billing', icon: CreditCard },
 ];
 
 export function Sidebar() {
@@ -23,7 +26,7 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
       <div className="p-6 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-meluri-400">Meluri MPC</h1>
+        <h1 className="text-xl font-bold text-velumx-400">VelumX MPC</h1>
         <p className="text-xs text-gray-500 mt-1">Developer Console</p>
       </div>
 
@@ -35,7 +38,7 @@ export function Sidebar() {
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
               pathname === href
-                ? 'bg-meluri-600/20 text-meluri-400'
+                ? 'bg-velumx-600/20 text-velumx-400'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800',
             )}
           >
@@ -47,7 +50,7 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-gray-800">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-meluri-600 flex items-center justify-center text-sm font-medium">
+          <div className="w-8 h-8 rounded-full bg-velumx-600 flex items-center justify-center text-sm font-medium">
             {user?.firstName?.[0] ?? 'D'}
           </div>
           <div className="flex-1 min-w-0">

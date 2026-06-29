@@ -1,0 +1,1387 @@
+openapi: 3.1.0
+info:
+  title: VelumX MPC API
+  version: 0.1.0
+  description: |
+    Stacks-native embedded wallet infrastructure. Like Privy for Stacks.
+
+    ## Authentication
+    All protected endpoints require an API key passed in the `x-api-key` header.
+    Get your API key by registering at [velumx.xyz](https://velumx.xyz).
+
+    ## Rate Limits
+    - 100 requests/minute per API key
+    - 10 requests/second burst
+
+    ## Error Codes
+    | Code | Meaning |
+    |------|---------|
+    | 400  | Bad request — invalid parameters |
+    | 401  | Unauthorized — missing or invalid API key |
+    | 404  | Not found — resource doesn't exist |
+    | 409  | Conflict — resource already exists |
+    | 429  | Too many requests — rate limit exceeded |
+    | 500  | Internal server error |
+
+  contact:
+    name: VelumX
+    url: https://velumx.xyz
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.velumx.xyz/api/v1
+    description: Production
+  - url: http://localhost:4002/api/v1
+    description: Local development
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Health
+    description: Service health and status
+  - name: Auth & API Keys
+    description: Developer registration, API key management, MPC provisioning
+  - name: Wallets
+    description: MPC wallet CRUD operations
+  - name: Wallet Transactions
+    description: Build unsigned transactions and broadcast
+  - name: Transactions
+    description: Sponsor and broadcast signed transactions
+  - name: Indexing
+    description: On-chain asset and transaction indexing
+  - name: Simple Wallet
+    description: Non-MPC wallet for demo/testing (no auth required)
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Your VelumX API key. Get one at https://velumx.xyz/dashboard.
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, timestamp]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: velumx-mpc-api
+        timestamp:
+          type: string
+          format: date-time
+
+    RegisterDeveloperRequest:
+      type: object
+      required: [email, name]
+      properties:
+        email:
+          type: string
+          format: email
+          example: dev@example.com
+        name:
+          type: string
+          maxLength: 128
+          example: Alice Developer
+        avatarUrl:
+          type: string
+          format: uri
+
+    Developer:
+      type: object
+      required: [id, email, name, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateApiKeyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 64
+          example: Production Key
+
+    ApiKeyResponse:
+      type: object
+      required: [id, name, keyPrefix, rawKey, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        keyPrefix:
+          type: string
+          description: First 8 characters of the key for identification
+          example: vx_sk_ab
+        rawKey:
+          type: string
+          description: Full API key — shown only once on creation
+        status:
+          type: string
+          enum: [Active, Revoked]
+        createdAt:
+          type: string
+          format: date-time
+
+    ApiKeyListItem:
+      type: object
+      required: [id, name, keyPrefix, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        keyPrefix:
+          type: string
+        status:
+          type: string
+          enum: [Active, Revoked]
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ProvisionMpcRequest:
+      type: object
+      required: [appName, allowedDomains]
+      properties:
+        appName:
+          type: string
+          example: My Stacks DApp
+        allowedDomains:
+          type: array
+          items:
+            type: string
+          example: ["https://myapp.com", "http://localhost:3000"]
+
+    MpcOrganization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        apiKeyId:
+          type: string
+          format: uuid
+        turnkeyOrgId:
+          type: string
+        appName:
+          type: string
+        allowedDomains:
+          type: array
+          items:
+            type: string
+        allowedAuthMethods:
+          type: array
+          items:
+            type: string
+        walletCount:
+          type: integer
+        txCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateWalletRequest:
+      type: object
+      required: [stxAddress, publicKey, userId]
+      properties:
+        stxAddress:
+          type: string
+          pattern: '^S[TP][A-Z0-9]{38,40}$'
+          description: Stacks address
+          example: SP2ZNGJ85WSY6PQTSKWDY0MM7NKJQZ5B8N9Y8W6P
+        publicKey:
+          type: string
+          description: Compressed secp256k1 public key (hex)
+          example: 02a17b...
+        userId:
+          type: string
+          description: Your application's end-user ID
+          example: user_abc123
+        label:
+          type: string
+          maxLength: 100
+          description: Human-readable label
+        turnkeyWalletId:
+          type: string
+        derivationPath:
+          type: string
+          description: BIP32 derivation path
+          example: m/44'/5757'/0'/0/0
+        network:
+          type: string
+          enum: [mainnet, testnet]
+          default: mainnet
+
+    UpdateWalletRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          maxLength: 100
+
+    MpcWallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        label:
+          type: string
+          nullable: true
+        stxAddress:
+          type: string
+        publicKey:
+          type: string
+        turnkeyWalletId:
+          type: string
+        derivationPath:
+          type: string
+          nullable: true
+        network:
+          type: string
+          enum: [mainnet, testnet]
+        nonce:
+          type: integer
+        isActive:
+          type: boolean
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaginatedWallets:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MpcWallet'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+
+    BuildStxTransferRequest:
+      type: object
+      required: [to, amount]
+      properties:
+        to:
+          type: string
+          description: Recipient Stacks address
+          example: SP2ZNGJ85WSY6PQTSKWDY0MM7NKJQZ5B8N9Y8W6P
+        amount:
+          type: number
+          minimum: 1
+          description: Amount in micro-STX (1 STX = 1,000,000)
+          example: 1000000
+        memo:
+          type: string
+          description: Optional memo (max 34 bytes)
+          maxLength: 34
+        fee:
+          type: number
+          minimum: 0
+          description: Fee in micro-STX. Auto-estimated if omitted.
+        nonce:
+          type: number
+          minimum: 0
+          description: Transaction nonce. Auto-tracked if omitted.
+
+    SendTokenRequest:
+      type: object
+      required: [contractId, recipient, amount]
+      properties:
+        contractId:
+          type: string
+          description: SIP-010 contract ID (e.g. "SP2...token-name")
+          example: SP2ZNGJ85WSY6PQTSKWDY0MM7NKJQZ5B8N9Y8W6P.my-token
+        recipient:
+          type: string
+        amount:
+          type: string
+          description: Raw integer token amount
+          example: "1000000"
+        fee:
+          type: number
+
+    SendNftRequest:
+      type: object
+      required: [contractId, tokenId, recipient]
+      properties:
+        contractId:
+          type: string
+          description: SIP-009 NFT contract ID
+        tokenId:
+          type: integer
+          description: NFT token ID
+        recipient:
+          type: string
+        fee:
+          type: number
+
+    ContractCallRequest:
+      type: object
+      required: [contractId, functionName, functionArgs]
+      properties:
+        contractId:
+          type: string
+        functionName:
+          type: string
+        functionArgs:
+          type: array
+          items: {}
+          description: Serialized Clarity values
+        fee:
+          type: number
+
+    BuiltTransaction:
+      type: object
+      properties:
+        txHex:
+          type: string
+          description: Unsigned transaction hex
+        fee:
+          type: number
+        nonce:
+          type: number
+        sponsored:
+          type: boolean
+          default: false
+
+    BroadcastRequest:
+      type: object
+      required: [txHex]
+      properties:
+        txHex:
+          type: string
+          description: Signed transaction hex
+        delegation:
+          type: string
+          description: JSON-encoded session key delegation
+        sponsored:
+          type: boolean
+          default: true
+
+    BroadcastResponse:
+      type: object
+      properties:
+        txid:
+          type: string
+          example: 0x1234...
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+
+    FeeEstimate:
+      type: object
+      properties:
+        low:
+          type: number
+          description: Low-priority fee (micro-STX)
+          example: 1000
+        medium:
+          type: number
+          description: Medium-priority fee
+          example: 5000
+        high:
+          type: number
+          description: High-priority fee
+          example: 10000
+        estimatedSeconds:
+          type: number
+          description: Estimated confirmation time (seconds) for medium fee
+          example: 600
+
+    SendTxRequest:
+      type: object
+      required: [txHex, senderAddress]
+      properties:
+        txHex:
+          type: string
+          description: Signed transaction hex
+        senderAddress:
+          type: string
+          pattern: '^S[TP][A-Z0-9]{38,40}$'
+        network:
+          type: string
+          enum: [mainnet, testnet]
+        delegation:
+          type: string
+          description: JSON-encoded session key delegation
+
+    SendTxResponse:
+      type: object
+      properties:
+        txid:
+          type: string
+        status:
+          type: string
+
+    MpcBalance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        walletId:
+          type: string
+          format: uuid
+        assetType:
+          type: string
+          enum: [STX, FT, NFT]
+        contractAddress:
+          type: string
+          nullable: true
+        symbol:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        decimals:
+          type: integer
+        balance:
+          type: string
+        tokenId:
+          type: string
+          nullable: true
+        metadataUri:
+          type: string
+          nullable: true
+
+    AssetBalances:
+      type: object
+      properties:
+        stx:
+          $ref: '#/components/schemas/MpcBalance'
+          nullable: true
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/MpcBalance'
+        nfts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MpcBalance'
+
+    MpcTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        walletId:
+          type: string
+          format: uuid
+        txid:
+          type: string
+        type:
+          type: string
+          enum: [stx_transfer, token_transfer, nft_transfer, contract_call, contract_deploy]
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+          nullable: true
+        amount:
+          type: string
+          nullable: true
+        assetSymbol:
+          type: string
+          nullable: true
+        assetPrincipal:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, confirmed, failed, dropped]
+        blockHeight:
+          type: integer
+          nullable: true
+        network:
+          type: string
+        sponsored:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TransactionHistory:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MpcTransaction'
+
+    WalletExport:
+      type: object
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        exportedAt:
+          type: string
+          format: date-time
+        shareCount:
+          type: integer
+        shares:
+          type: array
+          items:
+            type: object
+            properties:
+              shareIndex:
+                type: integer
+              holderId:
+                type: string
+                enum: [client, server-s1, server-s2]
+              encryptedShare:
+                type: string
+                description: AES-256-GCM encrypted + base64 encoded
+              encryptionKeyId:
+                type: string
+              shareVersion:
+                type: integer
+
+    SimpleWalletCreateRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        network:
+          type: string
+          enum: [mainnet, testnet]
+          default: mainnet
+
+    SimpleWalletResponse:
+      type: object
+      properties:
+        stxAddress:
+          type: string
+        publicKey:
+          type: string
+
+    SimpleWalletDetail:
+      type: object
+      properties:
+        userId:
+          type: string
+        stxAddress:
+          type: string
+        publicKey:
+          type: string
+        network:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    SimpleSendTxRequest:
+      type: object
+      required: [userId, recipient, amount]
+      properties:
+        userId:
+          type: string
+        recipient:
+          type: string
+        amount:
+          type: number
+
+    SimpleSendTokenRequest:
+      type: object
+      required: [userId, contractId, recipient, amount]
+      properties:
+        userId:
+          type: string
+        contractId:
+          type: string
+        recipient:
+          type: string
+        amount:
+          type: string
+
+    SimpleDeleteRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+
+    SimpleDeleteResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        error:
+          type: string
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/register:
+    post:
+      tags: [Auth & API Keys]
+      summary: Register as a developer
+      description: Register with email to create API keys. No auth required.
+      operationId: registerDeveloper
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeveloperRequest'
+      responses:
+        '201':
+          description: Developer registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Developer'
+        '400':
+          description: Invalid email or missing fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/api-keys:
+    get:
+      tags: [Auth & API Keys]
+      summary: List API keys
+      operationId: listApiKeys
+      responses:
+        '200':
+          description: List of API keys for the authenticated developer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKeyListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Auth & API Keys]
+      summary: Create a new API key
+      description: Returns the raw key — save it, it's shown only once.
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/api-keys/{id}:
+    delete:
+      tags: [Auth & API Keys]
+      summary: Revoke an API key
+      operationId: revokeApiKey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: API key revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/mpc/provision:
+    post:
+      tags: [Auth & API Keys]
+      summary: Provision MPC infrastructure
+      description: Creates a Turnkey sub-organization for your app. Required before creating wallets.
+      operationId: provisionMpc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvisionMpcRequest'
+      responses:
+        '201':
+          description: MPC infrastructure provisioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpcOrganization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets:
+    get:
+      tags: [Wallets]
+      summary: List wallets
+      description: Paginated list of all wallets in your organization.
+      operationId: listWallets
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: Filter by end-user ID
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Paginated wallet list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWallets'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Wallets]
+      summary: Create a new wallet
+      description: Register an MPC wallet for an end-user. The wallet must already exist in Turnkey.
+      operationId: createWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletRequest'
+      responses:
+        '201':
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpcWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: MPC not provisioned — call /auth/mpc/provision first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Wallet with this address already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallets/{id}:
+    get:
+      tags: [Wallets]
+      summary: Get wallet by ID
+      operationId: getWallet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wallet details with balances and recent transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpcWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Wallets]
+      summary: Update wallet label
+      operationId: updateWallet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletRequest'
+      responses:
+        '200':
+          description: Wallet updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpcWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Wallets]
+      summary: Soft-delete wallet
+      description: Marks wallet as deleted. 7-day cooldown before permanent deletion.
+      operationId: deleteWallet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Wallet deleted
+        '400':
+          description: Wallet already deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/export:
+    post:
+      tags: [Wallets]
+      summary: Export wallet key shares
+      description: Export the MPC key shares for backup or migration.
+      operationId: exportWallet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wallet key shares exported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/address/{address}:
+    get:
+      tags: [Wallets]
+      summary: Get wallet by Stacks address
+      operationId: getWalletByAddress
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^S[TP][A-Z0-9]{38,40}$'
+      responses:
+        '200':
+          description: Wallet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpcWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /wallets/user/{userId}:
+    get:
+      tags: [Wallets]
+      summary: Get wallets by end-user ID
+      operationId: getWalletsByUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of user's wallets (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MpcWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/send-stx:
+    post:
+      tags: [Wallet Transactions]
+      summary: Build unsigned STX transfer
+      description: Builds an unsigned STX transfer transaction hex. Signing happens client-side.
+      operationId: buildStxTransfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildStxTransferRequest'
+      responses:
+        '201':
+          description: Unsigned transaction built
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuiltTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/send-token:
+    post:
+      tags: [Wallet Transactions]
+      summary: Build unsigned SIP-010 token transfer
+      operationId: buildTokenTransfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTokenRequest'
+      responses:
+        '201':
+          description: Unsigned token transfer built
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuiltTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/send-nft:
+    post:
+      tags: [Wallet Transactions]
+      summary: Build unsigned SIP-009 NFT transfer
+      operationId: buildNftTransfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNftRequest'
+      responses:
+        '201':
+          description: Unsigned NFT transfer built
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuiltTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/contract-call:
+    post:
+      tags: [Wallet Transactions]
+      summary: Build unsigned contract call
+      operationId: buildContractCall
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractCallRequest'
+      responses:
+        '201':
+          description: Unsigned contract call built
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuiltTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/broadcast:
+    post:
+      tags: [Wallet Transactions]
+      summary: Broadcast a signed transaction
+      description: Broadcast a signed transaction to the Stacks network. Transactions are sponsored by default via the VelumX relayer.
+      operationId: broadcastTransaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastRequest'
+      responses:
+        '201':
+          description: Transaction broadcast
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{id}/transactions/estimate-fee:
+    post:
+      tags: [Wallet Transactions]
+      summary: Estimate transaction fee
+      operationId: estimateFee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Fee estimate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeEstimate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tx/send:
+    post:
+      tags: [Transactions]
+      summary: Sponsor and broadcast a signed transaction
+      description: |
+        The main transaction submission endpoint. Accepts a signed transaction hex,
+        looks up the sender's wallet, optionally verifies a session key delegation,
+        sponsors through the VelumX relayer, and broadcasts to the Stacks network.
+      operationId: sendTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTxRequest'
+      responses:
+        '201':
+          description: Transaction sponsored and broadcast
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTxResponse'
+        '400':
+          description: Session delegation verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Sender address not found in your organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallets/{address}/assets:
+    get:
+      tags: [Indexing]
+      summary: Get wallet assets
+      description: Returns STX, FT, and NFT balances. Triggers a sync from Hiro API.
+      operationId: getWalletAssets
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Asset balances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetBalances'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/{address}/transactions:
+    get:
+      tags: [Indexing]
+      summary: Get transaction history
+      description: Returns up to 50 most recent transactions. Triggers a sync from Hiro API.
+      operationId: getTransactionHistory
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /wallets/simple:
+    post:
+      tags: [Simple Wallet]
+      summary: Create a simple (non-MPC) wallet
+      description: |
+        For demo/testing only. Creates a wallet with a server-side private key.
+        No authentication required. Do not use in production.
+      operationId: createSimpleWallet
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleWalletCreateRequest'
+      responses:
+        '201':
+          description: Simple wallet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleWalletResponse'
+
+  /wallets/simple/{userId}:
+    get:
+      tags: [Simple Wallet]
+      summary: Get simple wallet by user ID
+      operationId: getSimpleWallet
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Simple wallet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleWalletDetail'
+
+  /wallets/simple/send-tx:
+    post:
+      tags: [Simple Wallet]
+      summary: Send STX from a simple wallet
+      description: Signs and broadcasts server-side. No auth required. Demo only.
+      operationId: simpleSendTx
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleSendTxRequest'
+      responses:
+        '201':
+          description: Transaction sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastResponse'
+
+  /wallets/simple/send-token:
+    post:
+      tags: [Simple Wallet]
+      summary: Send tokens from a simple wallet
+      operationId: simpleSendToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleSendTokenRequest'
+      responses:
+        '201':
+          description: Token transfer sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastResponse'
+
+  /wallets/simple/delete:
+    post:
+      tags: [Simple Wallet]
+      summary: Delete a simple wallet
+      operationId: deleteSimpleWallet
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleDeleteRequest'
+      responses:
+        '200':
+          description: Wallet deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleDeleteResponse'
+
+components:
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 401
+            message: Unauthorized
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 404
+            message: Not found
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            statusCode: 429
+            message: Too many requests. Try again in 60 seconds.

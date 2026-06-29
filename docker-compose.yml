@@ -1,21 +1,91 @@
-version: "3.8"
+version: '3.8'
 
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: meluri
-      POSTGRES_PASSWORD: meluri
-      POSTGRES_DB: meluri_mpc
+      POSTGRES_USER: velumx
+      POSTGRES_PASSWORD: velumx_dev
+      POSTGRES_DB: velumx
     ports:
-      - "5434:5432"
+      - "5432:5432"
     volumes:
-      - meluri_pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velumx"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6381:6379"
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "4002:4002"
+    environment:
+      NODE_ENV: development
+      PORT: "4002"
+      DATABASE_URL: postgresql://velumx:velumx_dev@postgres:5432/velumx
+      VELUMX_API_URL: http://localhost:4002/api/v1
+      TURNKEY_API_URL: https://api.turnkey.com
+      TURNKEY_ORGANIZATION_ID: ${TURNKEY_ORGANIZATION_ID:-org_dev}
+      TURNKEY_API_PRIVATE_KEY: ${TURNKEY_API_PRIVATE_KEY:-}
+      TURNKEY_API_PUBLIC_KEY: ${TURNKEY_API_PUBLIC_KEY:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET:-}
+      REDIS_URL: redis://redis:6379
+      KMS_PROVIDER: local
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      RELAYER_PRIVATE_KEY: ${RELAYER_PRIVATE_KEY:-}
+      RELAYER_ADDRESS: ${RELAYER_ADDRESS:-}
+      RATE_LIMIT_TTL: "60"
+      RATE_LIMIT_MAX: "100"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:5173"
+      VELUMX_NETWORK: testnet
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/sdk/src:/app/packages/sdk/src
+    command: >
+      sh -c "
+        pnpm --filter @velumx/api prisma:generate &&
+        pnpm --filter @velumx/api db:migrate &&
+        pnpm --filter @velumx/api dev
+      "
+
+  mpc-node-0:
+    build:
+      context: .
+      dockerfile: apps/mpc/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      NODE_ENV: development
+      NODE_ID: mpc-node-0
+      NODE_INDEX: "0"
+      PORT: "8080"
+      GOSSIP_PORT: "8081"
+    depends_on:
+      - api
 
 volumes:
-  meluri_pgdata:
+  pgdata:
+  redisdata:

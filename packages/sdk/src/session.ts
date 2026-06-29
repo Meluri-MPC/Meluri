@@ -3,7 +3,7 @@ import { getPublicKey } from '@noble/secp256k1';
 import { SessionKey, SessionDelegation } from './types';
 import { MpcTurnkey } from './turnkey';
 
-const STORAGE_KEY = 'meluri_mpc_session';
+const STORAGE_KEY = 'velumx_mpc_session';
 const DEFAULT_DURATION = 30 * 60 * 1000;
 
 export class MpcSession {
@@ -18,7 +18,7 @@ export class MpcSession {
     const expiresAt = Date.now() + (durMs || DEFAULT_DURATION);
     const nonce = crypto.randomBytes(16).toString('hex');
 
-    const msg = JSON.stringify({ action: 'meluri-mpc-session-delegation', sessionPublicKey: publicKey, walletPublicKey: walletPubKey, walletAddress: walletAddr, expiresAt, nonce });
+    const msg = JSON.stringify({ action: 'velumx-mpc-session-delegation', sessionPublicKey: publicKey, walletPublicKey: walletPubKey, walletAddress: walletAddr, expiresAt, nonce });
     const msgHash = crypto.createHash('sha256').update(msg).digest('hex');
     const sig = await this.turnkey.signRawPayload(tkWalletId, msgHash);
 

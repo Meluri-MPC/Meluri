@@ -31,7 +31,7 @@ export class SessionVerifierService {
     if (wallet.publicKey !== delegation.walletPublicKey) return { valid: false, reason: 'Public key mismatch' };
 
     const message = JSON.stringify({
-      action: 'meluri-mpc-session-delegation',
+      action: 'velumx-mpc-session-delegation',
       sessionPublicKey: delegation.sessionPublicKey,
       walletPublicKey: delegation.walletPublicKey,
       walletAddress: delegation.walletAddress,

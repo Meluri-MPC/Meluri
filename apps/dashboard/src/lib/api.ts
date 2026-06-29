@@ -1,8 +1,8 @@
-const MELURI_API = process.env.MELURI_API_URL || 'http://localhost:4002/api/v1';
+﻿const VELUMX_API = process.env.VELUMX_API_URL || 'http://localhost:4002/api/v1';
 
-export async function meluriApi(path: string, options: RequestInit = {}) {
+export async function velumxApi(path: string, options: RequestInit = {}) {
   const token = await getClerkToken();
-  const res = await fetch(`${MELURI_API}${path}`, {
+  const res = await fetch(`${VELUMX_API}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

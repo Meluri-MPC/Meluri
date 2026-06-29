@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 
-const API_URL = 'https://meluri.onrender.com/api/v1';
+const API_URL = 'https://velumx.onrender.com/api/v1';
 
 interface TokenBalance {
   symbol: string;
@@ -38,7 +38,7 @@ export default function App() {
 
   // Restore session on page load — auto-load wallet from API
   useEffect(() => {
-    const saved = localStorage.getItem('meluri_demo_wallet');
+    const saved = localStorage.getItem('velumx_demo_wallet');
     if (saved) {
       try {
         const { identifier: savedId } = JSON.parse(saved);
@@ -61,9 +61,9 @@ export default function App() {
   const updateWallet = useCallback((w: Wallet | null) => {
     setWallet(w);
     if (w) {
-      localStorage.setItem('meluri_demo_wallet', JSON.stringify({ identifier: identifier.trim(), wallet: w }));
+      localStorage.setItem('velumx_demo_wallet', JSON.stringify({ identifier: identifier.trim(), wallet: w }));
     } else {
-      localStorage.removeItem('meluri_demo_wallet');
+      localStorage.removeItem('velumx_demo_wallet');
     }
   }, [identifier]);
 
@@ -149,7 +149,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: identifier.trim() }),
       });
-      localStorage.removeItem('meluri_demo_wallet');
+      localStorage.removeItem('velumx_demo_wallet');
       setWallet(null);
       setBalance('0');
       setTokens([]);
@@ -226,7 +226,7 @@ export default function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>Meluri Wallet</h1>
+        <h1>VelumX Wallet</h1>
         <p>Simple custodial Stacks wallet — testnet</p>
       </div>
 

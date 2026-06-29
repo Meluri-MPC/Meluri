@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -39,7 +39,7 @@ export function MpcConfigForm({ apiKeyId }: { apiKeyId: string }) {
           value={appName}
           onChange={(e) => setAppName(e.target.value)}
           placeholder="My DApp"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-meluri-500"
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-velumx-500"
         />
       </div>
       <div className="flex-1">
@@ -48,13 +48,13 @@ export function MpcConfigForm({ apiKeyId }: { apiKeyId: string }) {
           value={domains}
           onChange={(e) => setDomains(e.target.value)}
           placeholder="myapp.xyz, localhost:3000"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-meluri-500"
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-velumx-500"
         />
       </div>
       <button
         type="submit"
         disabled={loading || !appName.trim()}
-        className="px-4 py-2 bg-meluri-600 hover:bg-meluri-700 disabled:opacity-50 rounded-lg text-sm whitespace-nowrap"
+        className="px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm whitespace-nowrap"
       >
         {loading ? 'Provisioning...' : 'Provision MPC'}
       </button>

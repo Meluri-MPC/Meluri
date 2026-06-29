@@ -1,6 +1,6 @@
-# Meluri MPC — Task Breakdown
+﻿# VelumX MPC — Task Breakdown
 
-> **Goal:** Build Meluri MPC, a Privy/Web3Auth competitor for the Stacks ecosystem — providing embedded wallet auth with multi-party computation (MPC) key management, wallet orchestration, and developer SDKs.
+> **Goal:** Build VelumX MPC, a Privy/Web3Auth competitor for the Stacks ecosystem — providing embedded wallet auth with multi-party computation (MPC) key management, wallet orchestration, and developer SDKs.
 
 ---
 
@@ -51,7 +51,7 @@ Phase 2 (MPC) ──────────────────────
 - [ ] **Google OAuth (OIDC)** — `apps/api/src/auth/providers/google/` — 1 day
   - Implement OpenID Connect flow: redirect → code exchange → ID token validation
   - Map Google `sub` → internal user ID with collision-safe namespace prefix
-  - Parse `email`, `name`, `picture` claims into Meluri user profile
+  - Parse `email`, `name`, `picture` claims into VelumX user profile
   - Handle user linking when same email exists across providers
 - [ ] **Apple OAuth (SIWA)** — `apps/api/src/auth/providers/apple/` — 1 day
   - Implement Sign In with Apple (SIWA): `authorization_code` grant type
@@ -115,7 +115,7 @@ Phase 2 (MPC) ──────────────────────
 - [ ] **Session expiry & logout** — `apps/api/src/auth/logout/` — 0.5 day
   - `POST /logout` — invalidate access token, refresh token, and session record
   - Clear Redis entries; blacklist access token JTI until natural expiry
-  - SDK clears local state; iframe posts `meluri:logout` message
+  - SDK clears local state; iframe posts `velumx:logout` message
 - [ ] **Rate limiting on auth endpoints** — `apps/api/src/auth/rate-limit/` — 0.5 day
   - Per-IP rate limit on `/auth/login`, `/auth/callback`, `/auth/register` (e.g., 10 req/min)
   - Per-IP rate limit on `/auth/refresh` (30 req/min — higher, since SDK auto-refreshes)
@@ -126,14 +126,14 @@ Phase 2 (MPC) ──────────────────────
 - [ ] **Developer registration & API key generation** — `apps/api/src/developers/` — 1 day
   - `POST /developers/register` — email + password → creates developer account
   - `POST /developers/api-keys` — creates a new API key for the developer
-  - API key format: `meluri_live_Sgx...4Fk` (prefix `meluri_live_` + 32-byte random)
+  - API key format: `velumx_live_Sgx...4Fk` (prefix `velumx_live_` + 32-byte random)
   - Return full key only once at creation time; subsequent requests show prefix + last 4 chars
   - Key scoping: `read`, `read+write`, or `admin` (future: scope to specific wallet operations)
 - [ ] **API key hashing (SHA256 + prefix)** — `apps/api/src/developers/hashing/` — 0.5 day
   - Store `SHA256(apiKey)` in DB, never store raw key
-  - Prefix `meluri_live_` / `meluri_test_` used for quick lookup (first 12 chars stored in separate indexed column)
+  - Prefix `velumx_live_` / `velumx_test_` used for quick lookup (first 12 chars stored in separate indexed column)
   - Constant-time comparison for key validation
-  - Test key prefix: `meluri_test_` (valid only in development mode, lower rate limits)
+  - Test key prefix: `velumx_test_` (valid only in development mode, lower rate limits)
 - [ ] **Developer domain allowlist validation** — `apps/api/src/developers/domains/` — 1 day
   - Developer registers allowed origin domains in dashboard: `https://myapp.com`, `http://localhost:3000`
   - On SDK init, SDK sends `origin` → server validates against allowlist
@@ -157,36 +157,36 @@ Phase 2 (MPC) ──────────────────────
 
 ### Task 1.4: SDK Integration (1 week)
 
-- [ ] **MeluriAuth React hook (`useMeluriAuth`)** — `packages/sdk/src/react/` — 2 days
-  - `const { login, logout, user, isReady, isAuthenticated, getAccessToken } = useMeluriAuth()`
+- [ ] **VelumxAuth React hook (`useVelumxAuth`)** — `packages/sdk/src/react/` — 2 days
+  - `const { login, logout, user, isReady, isAuthenticated, getAccessToken } = useVelumxAuth()`
   - Auto-refresh access token in background (10 min interval + on focus)
   - Session persistence in `localStorage` / `sessionStorage` (configurable)
-  - Expose `MeluriAuthProvider` context provider wrapping `MeluriAuthContext`
+  - Expose `VelumxAuthProvider` context provider wrapping `VelumxAuthContext`
   - Handle reconnection: if SDK loaded with valid refresh token cookie, restore session silently
 - [ ] **Embedded auth modal (iframe/postMessage)** — `packages/sdk/src/modal/` — 2 days
-  - Iframe pointing to `https://auth.meluri.io/embed` with `?tenant_id=...&redirect_uri=...`
-  - `postMessage` protocol: `{ type: 'meluri:auth_success', payload: { user, accessToken } }`
-  - SDK listens on `window` for `meluri:auth_success` → processes and closes modal
+  - Iframe pointing to `https://auth.velumx.io/embed` with `?tenant_id=...&redirect_uri=...`
+  - `postMessage` protocol: `{ type: 'velumx:auth_success', payload: { user, accessToken } }`
+  - SDK listens on `window` for `velumx:auth_success` → processes and closes modal
   - Modal UI: brandable accent color + logo via query params (`?theme=#4F46E5&logo=https://...`)
   - Social provider buttons: Google, Apple, GitHub, Discord, Twitter, Email
   - Error states: network failure, provider denied, timeout
-- [ ] **`meluri.login()` — opens modal, returns session** — `packages/sdk/src/core/` — 1 day
+- [ ] **`velumx.login()` — opens modal, returns session** — `packages/sdk/src/core/` — 1 day
   - Builds auth URL with required query params (tenant_id, redirect_uri, provider)
   - Opens centered popup or full-screen modal based on device (mobile = full-screen)
   - Resolves promise with `{ user, accessToken }` on success
   - Rejects with typed error on failure / user dismissal
   - Timeout after 5 minutes (user left modal open)
-- [ ] **`meluri.logout()` — clears session** — `packages/sdk/src/core/` — 0.5 day
+- [ ] **`velumx.logout()` — clears session** — `packages/sdk/src/core/` — 0.5 day
   - Calls `POST /auth/logout` to invalidate server session
   - Clears local storage: access token, refresh token, user data
-  - Dispatches `meluri:logout` event for app-level cleanup
-  - If iframe is embedded, posts `meluri:logout` message so iframe clears its state
+  - Dispatches `velumx:logout` event for app-level cleanup
+  - If iframe is embedded, posts `velumx:logout` message so iframe clears its state
 - [ ] **CDN bundle for headless HTML integration** — `packages/sdk/dist/cdn/` — 1 day
-  - IIFE build output: `meluri-sdk.iife.js`
-  - Expose `window.Meluri` global with same API surface as NPM package
+  - IIFE build output: `velumx-sdk.iife.js`
+  - Expose `window.Velumx` global with same API surface as NPM package
   - Serve via CDN (Cloudflare R2 + CDN or jsDelivr for OSS)
   - Source map included for debugging
-  - Versioned URL: `https://cdn.meluri.io/sdk/v1/meluri-sdk.iife.js`
+  - Versioned URL: `https://cdn.velumx.io/sdk/v1/velumx-sdk.iife.js`
 - [ ] **Documentation & examples** — `packages/sdk/README.md` + `apps/demo/` — 0.5 day
   - README: quick start, API reference, configuration options, troubleshooting
   - Demo app in `apps/demo/`: React app showing login → wallet connection → sign message → sign transaction
@@ -468,7 +468,7 @@ Phase 2 (MPC) ──────────────────────
   - Source from Stacks API / Hiro indexer
   - Cache recent transactions in local DB for fast access
   - Include: `txId`, `type` (transfer/contract-call/deploy), `from`, `to`, `amount`, `fee`, `status`, `blockHeight`, `timestamp`
-  - WebSocket subscription: `wss://api.meluri.io/wallets/:id/transactions/stream` for real-time updates
+  - WebSocket subscription: `wss://api.velumx.io/wallets/:id/transactions/stream` for real-time updates
 
 ### Task 3.3: Wallet UI Kit (1 week)
 
@@ -487,7 +487,7 @@ Phase 2 (MPC) ──────────────────────
   - All hooks accept optional `refreshInterval` and `onError` callback
 - [ ] **QR code & deep link support** — `packages/sdk/src/ui/qr/` — 1 day
   - `<QRCode address={address} />` — display receive address as QR code
-  - Deep link generation: `stacks://wallet.meluri.io/send?to=SP...&amount=1000000` for mobile wallets
+  - Deep link generation: `stacks://wallet.velumx.io/send?to=SP...&amount=1000000` for mobile wallets
   - Copy address button with "Copied!" feedback toast
 - [ ] **Accessibility & responsive design** — `packages/sdk/src/ui/a11y/` — 1 day
   - WCAG 2.1 AA compliance: focus indicators, color contrast (4.5:1 min), screen reader labels
@@ -507,8 +507,8 @@ Phase 2 (MPC) ──────────────────────
 ### Task 4.1: SDK Packaging (1 week)
 
 - [ ] **Monorepo package structure** — `packages/sdk/` — 0.5 day
-  - Entry points: `@meluri/sdk` (main), `@meluri/sdk/react`, `@meluri/sdk/wallets`, `@meluri/sdk/ui`
-  - `exports` field in `package.json` for proper subpath exports (`@meluri/sdk/react`, etc.)
+  - Entry points: `@velumx/sdk` (main), `@velumx/sdk/react`, `@velumx/sdk/wallets`, `@velumx/sdk/ui`
+  - `exports` field in `package.json` for proper subpath exports (`@velumx/sdk/react`, etc.)
   - TypeScript declarations: emit `.d.ts` files alongside `.js` output
   - Tree-shaking: ensure individual imports don't pull in entire library (ESM with `sideEffects: false`)
 - [ ] **Build configuration** — `packages/sdk/tsup.config.ts` — 1 day
@@ -545,7 +545,7 @@ Phase 2 (MPC) ──────────────────────
 
 - [ ] **API reference documentation** — `docs/api/` — 2 days
   - OpenAPI 3.1 spec for all REST endpoints (`apps/api/openapi.yaml`)
-  - Generated docs via Scalar or Redocly, hosted at `docs.meluri.io/api`
+  - Generated docs via Scalar or Redocly, hosted at `docs.velumx.io/api`
   - Request/response examples for every endpoint
   - Authentication guide: API key header, rate limits, error codes
   - Interactive "Try it" playground
@@ -564,8 +564,8 @@ Phase 2 (MPC) ──────────────────────
   - Each example: install deps → set env vars → run — documented in example's README
 - [ ] **Stacks-specific integration guides** — `docs/guides/` — 1 day
   - "Sign a Stacks Transaction" — full walkthrough with code
-  - "Call a Clarity Smart Contract" — using `@stacks/transactions` + Meluri SDK
-  - "Deploy a Smart Contract" — contract deployment via Meluri wallet
+  - "Call a Clarity Smart Contract" — using `@stacks/transactions` + VelumX SDK
+  - "Deploy a Smart Contract" — contract deployment via VelumX wallet
   - "STX Transfer" — simple token transfer
   - "SIP-009 NFT Transfer" — NFT-specific guide
   - "SIP-010 FT Transfer" — fungible token guide
@@ -617,7 +617,7 @@ Phase 2 (MPC) ──────────────────────
 ### Task 5.2: DevOps (0.5 week)
 
 - [ ] **Kubernetes deployment** — `infra/k8s/` — 2 days
-  - Namespaces: `meluri-prod`, `meluri-staging`
+  - Namespaces: `velumx-prod`, `velumx-staging`
   - Auth service: Deployment (3 replicas) + Service + HorizontalPodAutoscaler (CPU > 70%)
   - MPC service: StatefulSet (3 replicas, stable network IDs for peer discovery) + headless Service
   - PostgreSQL: Cloud SQL / RDS (managed, not in K8s) — connection via Secret + ExternalName Service
@@ -669,7 +669,7 @@ Phase 2 (MPC) ──────────────────────
     - `ws://mpc-node-0:8080` (MPC WebSocket)
     - `GET /.well-known/jwks.json`
   - Synthetic user journey: register → login → create wallet → sign transaction → verify — runs every 15 min
-  - Status page: public status.meluri.io (using Atlassian Statuspage or similar)
+  - Status page: public status.velumx.io (using Atlassian Statuspage or similar)
   - SLA tracking: measure monthly uptime against 99.95% target
 
 ---
@@ -692,7 +692,7 @@ Phase 2 (MPC) ──────────────────────
 - [ ] Auth service with 6 OAuth providers + email/magic link — Dockerized, deployed
 - [ ] JWT + session management with refresh token rotation
 - [ ] Multi-tenant developer platform with API key management
-- [ ] React SDK with `useMeluriAuth` + embedded auth modal
+- [ ] React SDK with `useVelumxAuth` + embedded auth modal
 - [ ] CDN bundle for vanilla HTML integration
 - [ ] MPC TSS service: 2-of-3 DKG + signing for secp256k1
 - [ ] Key share distribution, encryption, and recovery flows

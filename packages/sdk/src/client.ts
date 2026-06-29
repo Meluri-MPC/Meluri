@@ -1,21 +1,21 @@
-import { MeluriMPCConfig, MeluriMPCAuth, MPCWallet, AssetBalances, SendSTXParams, SendTokenParams, SendNFTParams, TransactionRecord, TokenBalance } from './types';
+import { VelumxMPCConfig, VelumxMPCAuth, MPCWallet, AssetBalances, SendSTXParams, SendTokenParams, SendNFTParams, TransactionRecord, TokenBalance } from './types';
 import { MpcTurnkey } from './turnkey';
 import { MpcWalletApi } from './wallet';
 import { MpcSigning } from './signing';
 import { MpcSession } from './session';
 import { publicKeyToAddress } from '@stacks/transactions';
 
-export class MeluriMPC {
+export class VelumxMPC {
   private backendUrl: string;
-  private auth: MeluriMPCAuth;
+  private auth: VelumxMPCAuth;
   private turnkey: MpcTurnkey;
   private wallet: MpcWalletApi;
   private signing: MpcSigning;
   private session: MpcSession;
   private walletCache: MPCWallet | null = null;
 
-  constructor(private config: MeluriMPCConfig) {
-    this.backendUrl = config.backendUrl || 'https://api.meluri.xyz/api/v1';
+  constructor(private config: VelumxMPCConfig) {
+    this.backendUrl = config.backendUrl || 'https://api.velumx.xyz/api/v1';
     this.auth = config.auth;
     this.turnkey = new MpcTurnkey();
     this.session = new MpcSession(this.turnkey);

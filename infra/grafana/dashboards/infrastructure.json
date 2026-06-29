@@ -1,0 +1,52 @@
+{
+  "title": "VelumX MPC — Infrastructure",
+  "uid": "velumx-infra",
+  "panels": [
+    {
+      "title": "CPU Usage per Service",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(container_cpu_usage_seconds_total{namespace=~\"velumx-.*\"}[5m])" }
+      ],
+      "yaxes": [{ "format": "percent" }]
+    },
+    {
+      "title": "Memory Usage per Service",
+      "type": "graph",
+      "targets": [
+        { "expr": "container_memory_usage_bytes{namespace=~\"velumx-.*\"}" }
+      ],
+      "yaxes": [{ "format": "bytes" }]
+    },
+    {
+      "title": "Network I/O",
+      "type": "graph",
+      "targets": [
+        { "expr": "rate(container_network_transmit_bytes_total{namespace=~\"velumx-.*\"}[5m])", "legendFormat": "TX {{pod}}" },
+        { "expr": "rate(container_network_receive_bytes_total{namespace=~\"velumx-.*\"}[5m])", "legendFormat": "RX {{pod}}" }
+      ]
+    },
+    {
+      "title": "DB Connections",
+      "type": "graph",
+      "targets": [
+        { "expr": "pg_stat_database_numbackends" }
+      ]
+    },
+    {
+      "title": "Redis Memory",
+      "type": "graph",
+      "targets": [
+        { "expr": "redis_memory_used_bytes" }
+      ],
+      "yaxes": [{ "format": "bytes" }]
+    },
+    {
+      "title": "Pod Restarts",
+      "type": "stat",
+      "targets": [
+        { "expr": "rate(kube_pod_container_status_restarts_total{namespace=~\"velumx-.*\"}[1h]) * 3600" }
+      ]
+    }
+  ]
+}
