@@ -108,11 +108,11 @@
     }
   },
   "dependencies": {
-    "@noble/secp256k1": "^2.2.0",
-    "@stacks/encryption": "^7.4.0",
-    "@stacks/network": "^7.3.1",
-    "@stacks/transactions": "^7.4.0",
-    "@turnkey/http": "^4.0.0",
+    "@noble/secp256k1": "^3.1.0",
+    "@stacks/encryption": "^7.5.0",
+    "@stacks/network": "^7.5.0",
+    "@stacks/transactions": "^7.5.0",
+    "@turnkey/http": "^4.1.1",
     "@turnkey/iframe-stamper": "^2.11.0"
   },
   "devDependencies": {
