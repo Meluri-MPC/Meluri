@@ -4,16 +4,6 @@ export interface VelumxMPCAuth {
   logout(): Promise<void>;
 }
 
-export interface AuthSession {
-  userId: string;
-  sessionToken: string;
-  provider: string;
-  email: string;
-  name: string;
-  avatarUrl?: string;
-  expiresAt: string;
-}
-
 export interface VelumxMPCConfig {
   apiKey: string;
   auth: VelumxMPCAuth;

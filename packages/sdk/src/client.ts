@@ -1,4 +1,6 @@
 import { VelumxMPCConfig, VelumxMPCAuth, MPCWallet, AssetBalances, SendSTXParams, SendTokenParams, SendNFTParams, TransactionRecord, TokenBalance } from './types';
+
+export { VelumxMPCConfig, MPCWallet };
 import { MpcTurnkey } from './turnkey';
 import { MpcWalletApi } from './wallet';
 import { MpcSigning } from './signing';
