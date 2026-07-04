@@ -9,7 +9,7 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.mts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.mjs"
       },
       "require": {
@@ -19,7 +19,7 @@
     },
     "./react": {
       "import": {
-        "types": "./dist/react/index.d.mts",
+        "types": "./dist/react/index.d.ts",
         "default": "./dist/react/index.mjs"
       },
       "require": {
@@ -29,7 +29,7 @@
     },
     "./wallets": {
       "import": {
-        "types": "./dist/wallets/index.d.mts",
+        "types": "./dist/wallets/index.d.ts",
         "default": "./dist/wallets/index.mjs"
       },
       "require": {
@@ -39,7 +39,7 @@
     },
     "./ui": {
       "import": {
-        "types": "./dist/ui/index.d.mts",
+        "types": "./dist/ui/index.d.ts",
         "default": "./dist/ui/index.mjs"
       },
       "require": {
@@ -49,7 +49,7 @@
     },
     "./native": {
       "import": {
-        "types": "./dist/native/index.d.mts",
+        "types": "./dist/native/index.d.ts",
         "default": "./dist/native/index.mjs"
       },
       "require": {

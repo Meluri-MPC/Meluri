@@ -17,8 +17,8 @@ export interface UseVelumxAuthResult {
 }
 
 export function useVelumxAuth(options: UseVelumxAuthOptions): UseVelumxAuthResult {
-  const { autoLogin = false, ...config } = options;
-  const clientRef = useRef<VelumxMPC>(new VelumxMPC(config));
+  const { autoLogin = false, apiKey, auth, network, backendUrl } = options;
+  const clientRef = useRef<VelumxMPC>(new VelumxMPC({ apiKey, auth, network, backendUrl }));
   const [wallet, setWallet] = useState<MPCWallet | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

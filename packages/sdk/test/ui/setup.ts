@@ -13,33 +13,36 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
 
 (globalThis as any).window = dom.window;
 (globalThis as any).document = dom.window.document;
-(globalThis as any).navigator = dom.window.navigator;
-(globalThis as any).HTMLElement = dom.window.HTMLElement;
-(globalThis as any).HTMLInputElement = dom.window.HTMLInputElement;
-(globalThis as any).HTMLCanvasElement = dom.window.HTMLCanvasElement;
-(globalThis as any).HTMLButtonElement = dom.window.HTMLButtonElement;
-(globalThis as any).Element = dom.window.Element;
-(globalThis as any).Node = dom.window.Node;
-(globalThis as any).getComputedStyle = dom.window.getComputedStyle;
-(globalThis as any).CustomEvent = dom.window.CustomEvent;
-(globalThis as any).Event = dom.window.Event;
-(globalThis as any).MouseEvent = dom.window.MouseEvent;
-(globalThis as any).KeyboardEvent = dom.window.KeyboardEvent;
-(globalThis as any).FocusEvent = dom.window.FocusEvent;
-(globalThis as any).ClipboardEvent = dom.window.ClipboardEvent;
-(globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0) as unknown as number;
-(globalThis as any).cancelAnimationFrame = clearTimeout;
-(globalThis as any).ResizeObserver = class ResizeObserver {
+
+const g = globalThis as any;
+try { g.navigator = dom.window.navigator; } catch { Object.defineProperty(g, 'navigator', { value: dom.window.navigator, configurable: true }); }
+
+g.HTMLElement = dom.window.HTMLElement;
+g.HTMLInputElement = dom.window.HTMLInputElement;
+g.HTMLCanvasElement = dom.window.HTMLCanvasElement;
+g.HTMLButtonElement = dom.window.HTMLButtonElement;
+g.Element = dom.window.Element;
+g.Node = dom.window.Node;
+g.getComputedStyle = dom.window.getComputedStyle;
+g.CustomEvent = dom.window.CustomEvent;
+g.Event = dom.window.Event;
+g.MouseEvent = dom.window.MouseEvent;
+g.KeyboardEvent = dom.window.KeyboardEvent;
+g.FocusEvent = dom.window.FocusEvent;
+g.ClipboardEvent = dom.window.ClipboardEvent;
+g.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0) as unknown as number;
+g.cancelAnimationFrame = clearTimeout;
+g.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 };
-(globalThis as any).IntersectionObserver = class IntersectionObserver {
+g.IntersectionObserver = class IntersectionObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 };
-(globalThis as any).matchMedia = (query: string) => ({
+g.matchMedia = (query: string) => ({
   matches: query === '(prefers-reduced-motion: reduce)' ? false : false,
   media: query,
   onchange: null,

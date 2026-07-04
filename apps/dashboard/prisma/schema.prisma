@@ -47,6 +47,7 @@ model MpcOrganization {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   wallets             MpcWallet[]
+  keyShares           KeyShare[]
 }
 
 model MpcWallet {
@@ -54,19 +55,49 @@ model MpcWallet {
   orgId           String
   organization    MpcOrganization @relation(fields: [orgId], references: [id])
   userId          String
+  label           String?
   stxAddress      String        @unique
   publicKey       String        @unique
   turnkeyWalletId String        @unique
+  derivationPath  String?
   network         String        @default("mainnet")
+  nonce           Int           @default(0)
+  isActive        Boolean       @default(true)
+  deletedAt       DateTime?
   lastSyncedAt    DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   balances        MpcBalance[]
   transactions    MpcTransaction[]
+  keyShares       KeyShare[]
 
   @@index([orgId])
   @@index([userId])
   @@index([stxAddress])
+  @@index([orgId, userId])
+}
+
+model KeyShare {
+  id              String    @id @default(cuid())
+  walletId        String
+  wallet          MpcWallet @relation(fields: [walletId], references: [id])
+  orgId           String
+  organization    MpcOrganization @relation(fields: [orgId], references: [id])
+  shareIndex      Int
+  holderId        String
+  encryptedShare  String    @db.Text
+  encryptionKeyId String
+  publicKey       String
+  chainCode       String?
+  status          String    @default("active")
+  shareVersion    Int       @default(1)
+  dkgSessionId    String?
+  createdAt       DateTime  @default(now())
+  rotatedAt       DateTime?
+
+  @@unique([walletId, shareIndex])
+  @@index([walletId])
+  @@index([orgId])
 }
 
 model MpcBalance {
@@ -108,4 +139,36 @@ model MpcTransaction {
   @@unique([walletId, txid])
   @@index([walletId])
   @@index([txid])
+}
+
+model OAuthSession {
+  id              String   @id @default(cuid())
+  userId          String
+  provider        String
+  providerUserId  String?
+  email           String?
+  name            String?
+  avatarUrl       String?
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  sessionToken    String   @unique
+  sessionExpiresAt DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([provider, providerUserId])
+}
+
+model SimpleWallet {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  stxAddress String   @unique
+  publicKey  String   @unique
+  privateKey String
+  network    String   @default("testnet")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

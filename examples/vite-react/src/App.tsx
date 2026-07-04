@@ -54,15 +54,15 @@ export default function App() {
 }
 
 function Dashboard({ wallet, onLogout }: { wallet: any; onLogout: () => void }) {
-  const { data: balance } = useBalance({ address: wallet.stxAddress });
-  const { data: txs } = useTransactions({ address: wallet.stxAddress, limit: 10 });
-  const { sendStx, status: txStatus, txid } = useSendTransaction();
+  const { balance } = useBalance(wallet.stxAddress);
+  const { transactions: txs } = useTransactions(wallet.stxAddress, { pageSize: 10 });
+  const { send: sendStx, isLoading: txSending, txId: txid } = useSendTransaction();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
 
   const handleSend = async () => {
     try {
-      await sendStx({ recipient, amount: Number(amount) * 1_000_000 });
+      await sendStx({ recipient, amount: String(Number(amount) * 1_000_000) });
       setRecipient(''); setAmount('');
     } catch (err: any) { alert(err.message); }
   };
@@ -72,7 +72,7 @@ function Dashboard({ wallet, onLogout }: { wallet: any; onLogout: () => void }) 
       <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 8, marginBottom: 20 }}>
         <p><strong>Address:</strong> {wallet.stxAddress}</p>
         <p><strong>Network:</strong> {wallet.network}</p>
-        <p><strong>Balance:</strong> {balance?.stx ?? 'Loading...'} STX</p>
+        <p><strong>Balance:</strong> {balance ?? 'Loading...'} STX</p>
       </div>
 
       <h2>Send STX</h2>
@@ -82,7 +82,7 @@ function Dashboard({ wallet, onLogout }: { wallet: any; onLogout: () => void }) 
         <input placeholder="Amount (STX)" value={amount} onChange={(e) => setAmount(e.target.value)}
           style={{ width: 120, padding: 8 }} type="number" />
         <button onClick={handleSend} style={{ padding: '8px 16px' }}>
-          {txStatus === 'pending' ? 'Sending...' : 'Send'}
+          {txSending ? 'Sending...' : 'Send'}
         </button>
       </div>
       {txid && <p style={{ color: 'green' }}>Sent! TXID: {txid}</p>}

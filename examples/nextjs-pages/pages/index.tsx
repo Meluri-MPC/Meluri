@@ -64,15 +64,15 @@ export default function Home() {
 }
 
 function WalletInfo({ wallet, onLogout }: { wallet: any; onLogout: () => void }) {
-  const { data: balance } = useBalance({ address: wallet.stxAddress });
-  const { data: txData } = useTransactions({ address: wallet.stxAddress, limit: 10 });
+  const { balance } = useBalance(wallet.stxAddress);
+  const { transactions: txData } = useTransactions(wallet.stxAddress, { pageSize: 10 });
 
   return (
     <div>
       <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 8, marginBottom: 20 }}>
         <p><strong>Address:</strong> {wallet.stxAddress}</p>
         <p><strong>Network:</strong> {wallet.network}</p>
-        <p><strong>Balance:</strong> {balance?.stx ?? 'Loading...'} STX</p>
+        <p><strong>Balance:</strong> {balance ?? 'Loading...'} STX</p>
       </div>
 
       <h2>Recent Transactions</h2>

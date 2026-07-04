@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { VelumXProvider } from '@/components/VelumXProvider';
+import { VelumXProvider } from '../components/VelumXProvider';
 
 export const metadata: Metadata = {
   title: 'VelumX MPC — Next.js App Router',

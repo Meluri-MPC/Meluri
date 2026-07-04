@@ -1,6 +1,6 @@
-import { VelumXProvider } from '@/components/VelumXProvider';
-import { WalletSection } from '@/components/WalletSection';
-import { ServerInfo } from '@/components/ServerInfo';
+import { VelumXProvider } from '../components/VelumXProvider';
+import { WalletSection } from '../components/WalletSection';
+import ServerInfo from '../components/ServerInfo';
 
 export default function Home() {
   return (
