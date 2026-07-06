@@ -8,11 +8,11 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY package.json tsconfig.json ./
 COPY apps/mpc/package.json apps/mpc/tsconfig*.json apps/mpc/
 
-RUN pnpm install --frozen-lockfile --filter @velumx/mpc
+RUN pnpm install --frozen-lockfile --filter @velumx/mpc-service
 
 COPY apps/mpc/src apps/mpc/src/
 
-RUN pnpm --filter @velumx/mpc build
+RUN pnpm --filter @velumx/mpc-service build
 
 # Production stage
 FROM node:20-alpine AS runner

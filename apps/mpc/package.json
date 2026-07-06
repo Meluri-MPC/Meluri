@@ -1,5 +1,5 @@
 {
-  "name": "@velumx/mpc",
+  "name": "@velumx/mpc-service",
   "version": "0.1.0",
   "private": true,
   "description": "VelumX MPC Service — Threshold Signature Scheme implementation for Stacks",
