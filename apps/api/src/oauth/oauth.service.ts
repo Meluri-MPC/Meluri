@@ -10,12 +10,47 @@ import * as crypto from 'crypto';
 export class OAuthService {
   private readonly logger = new Logger(OAuthService.name);
   private readonly sessionDurationMs = 2 * 60 * 60 * 1000;
+  private fallbackStore: Map<string, { value: string; expiresAt: number }> = new Map();
 
   constructor(
     private prisma: PrismaService,
     private tokenService: TokenService,
-    @Inject(REDIS_CLIENT) private redis: Redis,
+    @Inject(REDIS_CLIENT) private redis: Redis | null,
   ) {}
+
+  private get redisAvailable(): boolean {
+    return this.redis !== null && this.redis.status === 'ready';
+  }
+
+  private async redisGet(key: string): Promise<string | null> {
+    if (this.redisAvailable) return this.redis!.get(key);
+    const entry = this.fallbackStore.get(key);
+    if (entry && Date.now() < entry.expiresAt) return entry.value;
+    this.fallbackStore.delete(key);
+    return null;
+  }
+
+  private async redisSet(key: string, value: string, mode?: string, ttlSec?: number): Promise<void> {
+    if (this.redisAvailable) {
+      await this.redis!.set(key, value);
+      if (mode === 'EX' && ttlSec) await this.redis!.expire(key, ttlSec);
+    } else {
+      const expiresAt = ttlSec ? Date.now() + ttlSec * 1000 : Date.now() + 3600000;
+      this.fallbackStore.set(key, { value, expiresAt });
+    }
+  }
+
+  private async redisDel(key: string): Promise<void> {
+    if (this.redisAvailable) await this.redis!.del(key);
+    else this.fallbackStore.delete(key);
+  }
+
+  private async redisHset(key: string, fields: Record<string, string>): Promise<void> {
+    if (this.redisAvailable) {
+      await this.redis!.hset(key, fields);
+      await this.redis!.expire(key, Math.floor(this.sessionDurationMs / 1000));
+    }
+  }
 
   getRedirectBase(): string {
     return process.env.OAUTH_REDIRECT_BASE ?? 'http://localhost:3001';
@@ -27,14 +62,14 @@ export class OAuthService {
 
   async createState(provider: string): Promise<string> {
     const state = crypto.randomBytes(32).toString('hex');
-    await this.redis.set(`csrf:${state}`, provider, 'EX', 300);
+    await this.redisSet(`csrf:${state}`, provider, 'EX', 300);
     return state;
   }
 
   async validateState(state: string, provider: string): Promise<boolean> {
-    const stored = await this.redis.get(`csrf:${state}`);
+    const stored = await this.redisGet(`csrf:${state}`);
     if (!stored) return false;
-    await this.redis.del(`csrf:${state}`);
+    await this.redisDel(`csrf:${state}`);
     return stored === provider;
   }
 
@@ -100,15 +135,13 @@ export class OAuthService {
       },
     });
 
-    const sessionKey = `session:${userId}`;
-    await this.redis.hset(sessionKey, {
+    await this.redisHset(`session:${userId}`, {
       email: profile.email ?? '',
       name: profile.name ?? '',
       provider,
       avatarUrl: profile.avatarUrl ?? '',
       lastLoginAt: new Date().toISOString(),
     });
-    await this.redis.expire(sessionKey, Math.floor(this.sessionDurationMs / 1000));
 
     return { profile, ...tokens };
   }
@@ -205,20 +238,9 @@ export class OAuthService {
 
     const payload = await this.tokenService.verifyAccessToken(accessToken);
     if (payload) {
-      await this.redis.del(`session:${payload.sub}`);
+      await this.redisDel(`session:${payload.sub}`);
       await this.tokenService.revokeAllUserSessions(payload.sub);
     }
-  }
-
-  async storeCsrfState(state: string, provider: string): Promise<void> {
-    await this.redis.set(`csrf:${state}`, provider, 'EX', 300);
-  }
-
-  async checkCsrfState(state: string, provider: string): Promise<boolean> {
-    const stored = await this.redis.get(`csrf:${state}`);
-    if (!stored || stored !== provider) return false;
-    await this.redis.del(`csrf:${state}`);
-    return true;
   }
 
   // ─── Email Magic Link ────────────────────────────────────────────────
@@ -228,7 +250,7 @@ export class OAuthService {
     const expiresAt = Date.now() + 15 * 60 * 1000;
 
     const key = `magic:${email.toLowerCase()}`;
-    await this.redis.set(key, JSON.stringify({ code, expiresAt }), 'EX', 900);
+    await this.redisSet(key, JSON.stringify({ code, expiresAt }), 'EX', 900);
 
     this.logger.log(`[MAGIC LINK] Email: ${email}, Code: ${code}`);
 
@@ -260,17 +282,17 @@ export class OAuthService {
     expiresIn: number;
   }> {
     const key = `magic:${email.toLowerCase()}`;
-    const raw = await this.redis.get(key);
+    const raw = await this.redisGet(key);
     if (!raw) throw new Error('No magic link code found for this email');
 
     const entry = JSON.parse(raw);
     if (Date.now() > entry.expiresAt) {
-      await this.redis.del(key);
+      await this.redisDel(key);
       throw new Error('Magic link code expired');
     }
     if (entry.code !== code) throw new Error('Invalid magic link code');
 
-    await this.redis.del(key);
+    await this.redisDel(key);
 
     const userId = `email:${email.toLowerCase()}`;
     const profile: OAuthProfile = {

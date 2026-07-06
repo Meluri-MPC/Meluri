@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: velumx-api
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: .
+    buildCommand: pnpm install && pnpm --filter "./packages/sdk" build && pnpm --filter @velumx/api build:prod
+    startCommand: node apps/api/dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4002"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: velumx-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: velumx-redis
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: "https://velumx.xyz,https://dashboard.velumx.xyz"
+      - key: VELUMX_NETWORK
+        value: mainnet

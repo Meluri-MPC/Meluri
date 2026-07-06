@@ -32,20 +32,75 @@ export class TokenService implements OnModuleInit {
   private readonly logger = new Logger(TokenService.name);
   private keyPair: KeyPair | null = null;
   private publicJwk: Record<string, any> | null = null;
+  private fallbackStore: Map<string, string> = new Map();
 
   private readonly accessTokenExpiry = '15m';
   private readonly accessTokenExpiryMs = 15 * 60 * 1000;
   private readonly refreshTokenExpiry = '7d';
   private readonly refreshTokenExpiryMs = 7 * 24 * 60 * 60 * 1000;
 
-  constructor(@Inject(REDIS_CLIENT) private redis: Redis) {}
+  constructor(@Inject(REDIS_CLIENT) private redis: Redis | null) {}
 
   async onModuleInit() {
     await this.loadOrGenerateKeys();
   }
 
+  private get redisAvailable(): boolean {
+    return this.redis !== null && this.redis.status === 'ready';
+  }
+
+  private async redisGet(key: string): Promise<string | null> {
+    if (this.redisAvailable) return this.redis!.get(key);
+    this.cleanupFallbackStore();
+    return this.fallbackStore.get(key) ?? null;
+  }
+
+  private async redisSet(key: string, value: string, mode?: string, ttl?: number): Promise<void> {
+    if (this.redisAvailable) {
+      if (mode === 'PX') {
+        await this.redis!.set(key, value);
+        await this.redis!.pexpire(key, ttl ?? 0);
+      } else if (mode === 'EX') {
+        await this.redis!.set(key, value);
+        await this.redis!.expire(key, ttl ?? 0);
+      } else {
+        await this.redis!.set(key, value);
+      }
+    } else {
+      this.fallbackStore.set(key, value);
+    }
+  }
+
+  private async redisDel(key: string): Promise<void> {
+    if (this.redisAvailable) {
+      await this.redis!.del(key);
+    } else {
+      this.fallbackStore.delete(key);
+    }
+  }
+
+  private async redisKeys(pattern: string): Promise<string[]> {
+    if (this.redisAvailable) return this.redis!.keys(pattern);
+    const keys: string[] = [];
+    const prefix = pattern.replace('*', '');
+    for (const key of this.fallbackStore.keys()) {
+      if (key.startsWith(prefix)) keys.push(key);
+    }
+    return keys;
+  }
+
+  private cleanupFallbackStore(): void {
+    const maxEntries = 10000;
+    if (this.fallbackStore.size > maxEntries) {
+      const keys = Array.from(this.fallbackStore.keys());
+      for (let i = 0; i < keys.length - maxEntries; i++) {
+        this.fallbackStore.delete(keys[i]);
+      }
+    }
+  }
+
   private async loadOrGenerateKeys() {
-    const stored = await this.redis.get('jwt:keypair');
+    const stored = await this.redisGet('jwt:keypair');
     if (stored) {
       const parsed = JSON.parse(stored);
       this.keyPair = parsed;
@@ -63,9 +118,9 @@ export class TokenService implements OnModuleInit {
     const keyId = crypto.randomBytes(8).toString('hex');
     this.keyPair = { privateKey, publicKey, keyId };
 
-    await this.redis.set('jwt:keypair', JSON.stringify(this.keyPair));
+    await this.redisSet('jwt:keypair', JSON.stringify(this.keyPair));
     this.publicJwk = await this.exportJwk(publicKey, keyId);
-    this.logger.log(`Generated new JWT key pair (kid: ${keyId})`);
+    this.logger.log(`Generated new JWT key pair (kid: ${keyId})${this.redisAvailable ? '' : ' [in-memory fallback]'}`);
   }
 
   private async exportJwk(publicKeyPem: string, keyId: string): Promise<Record<string, any>> {
@@ -95,7 +150,7 @@ export class TokenService implements OnModuleInit {
     const refreshToken = crypto.randomBytes(48).toString('hex');
     const jti = crypto.randomBytes(16).toString('hex');
 
-    await this.redis.set(
+    await this.redisSet(
       `refresh:${refreshToken}`,
       JSON.stringify({ sub: payload.sub, email: payload.email, jti }),
       'PX',
@@ -124,11 +179,11 @@ export class TokenService implements OnModuleInit {
   }
 
   async refreshAccessToken(refreshToken: string): Promise<TokenPair | null> {
-    const stored = await this.redis.get(`refresh:${refreshToken}`);
+    const stored = await this.redisGet(`refresh:${refreshToken}`);
     if (!stored) return null;
 
     const data = JSON.parse(stored);
-    await this.redis.del(`refresh:${refreshToken}`);
+    await this.redisDel(`refresh:${refreshToken}`);
 
     return this.issueTokens({
       sub: data.sub,
@@ -139,25 +194,25 @@ export class TokenService implements OnModuleInit {
   }
 
   async revokeRefreshToken(refreshToken: string): Promise<void> {
-    await this.redis.set(`revoked:${refreshToken}`, '1', 'PX', this.refreshTokenExpiryMs);
-    await this.redis.del(`refresh:${refreshToken}`);
+    await this.redisSet(`revoked:${refreshToken}`, '1', 'PX', this.refreshTokenExpiryMs);
+    await this.redisDel(`refresh:${refreshToken}`);
   }
 
   async isRefreshTokenRevoked(refreshToken: string): Promise<boolean> {
-    const result = await this.redis.get(`revoked:${refreshToken}`);
+    const result = await this.redisGet(`revoked:${refreshToken}`);
     return result !== null;
   }
 
   async revokeAllUserSessions(sub: string): Promise<void> {
-    const keys = await this.redis.keys(`refresh:*`);
+    const keys = await this.redisKeys('refresh:*');
     for (const key of keys) {
-      const stored = await this.redis.get(key);
+      const stored = await this.redisGet(key);
       if (stored) {
         const data = JSON.parse(stored);
         if (data.sub === sub) {
           const token = key.replace('refresh:', '');
-          await this.redis.set(`revoked:${token}`, '1', 'PX', this.refreshTokenExpiryMs);
-          await this.redis.del(key);
+          await this.redisSet(`revoked:${token}`, '1', 'PX', this.refreshTokenExpiryMs);
+          await this.redisDel(key);
         }
       }
     }
