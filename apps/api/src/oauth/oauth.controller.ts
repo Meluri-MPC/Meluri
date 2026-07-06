@@ -1,12 +1,11 @@
 import {
   Controller, Get, Post, Body, Query, Param, Res,
-  HttpCode, HttpStatus, Req, UnauthorizedException,
+  HttpCode, HttpStatus, UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { OAuthService } from './oauth.service';
-import { MagicLinkRequestDto, MagicLinkVerifyDto, SessionResponseDto } from './dto/oauth.dto';
-import * as crypto from 'crypto';
+import { MagicLinkRequestDto, MagicLinkVerifyDto } from './dto/oauth.dto';
 
 @ApiTags('OAuth')
 @Controller('oauth')
@@ -21,12 +20,11 @@ export class OAuthController {
 
   @Get(':provider')
   @ApiOperation({ summary: 'Initiate OAuth login with a provider' })
-  initiateOAuth(
+  async initiateOAuth(
     @Param('provider') provider: string,
-    @Query('redirectUrl') redirectUrl: string,
     @Res() res: Response,
   ) {
-    const state = crypto.randomBytes(16).toString('hex');
+    const state = await this.oauthService.createState(provider);
     const authUrl = this.oauthService.getAuthUrl(provider, state);
     res.redirect(authUrl);
   }
@@ -40,13 +38,50 @@ export class OAuthController {
     @Res() res: Response,
   ) {
     try {
+      const valid = await this.oauthService.validateState(state, provider);
+      if (!valid) {
+        return res.status(403).json({ error: 'Invalid or expired CSRF state' });
+      }
+
       const result = await this.oauthService.handleCallback(provider, code);
       const redirectBase = process.env.OAUTH_REDIRECT_BASE ?? 'http://localhost:3000';
-      const redirectUrl = `${redirectBase}?sessionToken=${result.sessionToken}&provider=${provider}&expiresAt=${result.expiresAt.toISOString()}`;
+      const redirectUrl = `${redirectBase}?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&provider=${provider}&expiresIn=${result.expiresIn}`;
       res.redirect(redirectUrl);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
+  }
+
+  @Post('token/refresh')
+  @ApiOperation({ summary: 'Refresh an access token using a refresh token' })
+  async refreshToken(@Body('refreshToken') refreshToken: string) {
+    if (!refreshToken) throw new UnauthorizedException('refreshToken required');
+
+    const tokens = await this.oauthService.refreshSession(refreshToken);
+    if (!tokens) throw new UnauthorizedException('Invalid or revoked refresh token');
+
+    return tokens;
+  }
+
+  @Post('session/validate')
+  @ApiOperation({ summary: 'Validate an access token' })
+  async validateSession(@Body('accessToken') accessToken: string) {
+    if (!accessToken) throw new UnauthorizedException('accessToken required');
+
+    const session = await this.oauthService.validateAccessToken(accessToken);
+    if (!session) throw new UnauthorizedException('Invalid or expired access token');
+
+    return { valid: true, session };
+  }
+
+  @Post('session/revoke')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke a session' })
+  async revokeSession(
+    @Body('accessToken') accessToken?: string,
+    @Body('refreshToken') refreshToken?: string,
+  ) {
+    await this.oauthService.revokeSession(accessToken ?? '', refreshToken);
   }
 
   @Post('magic-link/send')
@@ -59,13 +94,14 @@ export class OAuthController {
 
   @Post('magic-link/verify')
   @ApiOperation({ summary: 'Verify magic link code and create session' })
-  async verifyMagicLink(@Body() dto: MagicLinkVerifyDto): Promise<SessionResponseDto> {
+  async verifyMagicLink(@Body() dto: MagicLinkVerifyDto) {
     try {
       const result = await this.oauthService.verifyMagicLink(dto.email, dto.code);
       return {
         userId: result.profile.providerUserId,
-        sessionToken: result.sessionToken,
-        expiresAt: result.expiresAt.toISOString(),
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        expiresIn: result.expiresIn,
         provider: 'email',
         email: result.profile.email,
         name: result.profile.name,
@@ -74,23 +110,5 @@ export class OAuthController {
     } catch (error: any) {
       throw new UnauthorizedException(error.message);
     }
-  }
-
-  @Post('session/validate')
-  @ApiOperation({ summary: 'Validate a session token' })
-  async validateSession(@Body('sessionToken') sessionToken: string) {
-    if (!sessionToken) throw new UnauthorizedException('sessionToken required');
-
-    const session = await this.oauthService.validateSession(sessionToken);
-    if (!session) throw new UnauthorizedException('Invalid or expired session');
-
-    return { valid: true, session };
-  }
-
-  @Post('session/revoke')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Revoke a session token' })
-  async revokeSession(@Body('sessionToken') sessionToken: string) {
-    await this.oauthService.revokeSession(sessionToken);
   }
 }

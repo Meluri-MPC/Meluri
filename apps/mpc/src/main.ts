@@ -21,8 +21,12 @@ async function bootstrap() {
   await app.startAllMicroservices();
 
   const port = process.env.PORT || 4003;
+  const gossipPort = process.env.GOSSIP_PORT || '8081';
+  const nodeId = process.env.NODE_ID || 'mpc-node-0';
+
   await app.listen(port);
-  console.log(`VelumX MPC Service -> http://localhost:${port}`);
-  console.log(`VelumX MPC gRPC   -> 0.0.0.0:${grpcPort}`);
+  console.log(`[${nodeId}] VelumX MPC Service -> http://localhost:${port}`);
+  console.log(`[${nodeId}] VelumX MPC gRPC   -> 0.0.0.0:${grpcPort}`);
+  console.log(`[${nodeId}] VelumX MPC Transport -> ws://0.0.0.0:${gossipPort}`);
 }
 bootstrap();

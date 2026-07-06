@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TurnkeyService } from '../turnkey/turnkey.service';
+import { MpcProvisionService } from '../mpc/mpc-provision.service';
 import { RegisterDeveloperDto, CreateApiKeyDto } from './dto/auth.dto';
 import * as crypto from 'crypto';
 
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private turnkey: TurnkeyService,
+    @Optional() private mpcProvision?: MpcProvisionService,
   ) {}
 
   async registerDeveloper(dto: RegisterDeveloperDto) {
@@ -62,6 +64,14 @@ export class AuthService {
         allowedDomains,
       },
     });
+  }
+
+  async provisionNativeMpcOrg(apiKeyId: string, appName: string, allowedDomains: string[]) {
+    if (!this.mpcProvision) {
+      throw new Error('Native MPC provisioning is not available. MpcModule may not be loaded.');
+    }
+
+    return this.mpcProvision.provisionMpcOrg(apiKeyId, appName, allowedDomains);
   }
 
   async listApiKeys(developerId: string) {

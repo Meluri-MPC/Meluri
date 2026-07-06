@@ -6,20 +6,27 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:5173',
+  ];
+
+  const dynamicOrigins = [
+    ...corsOrigins,
+    /\.vercel\.app$/,
+    /\.velumx\.xyz$/,
+    /\.onrender\.com$/,
+    /\.netlify\.app$/,
+    /^http:\/\/localhost:\d+$/,
+  ];
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:5173',
-      'https://velumx.xyz',
-      /\.vercel\.app$/,
-      /\.velumx\.xyz$/,
-      /\.onrender\.com$/,
-      /\.netlify\.app$/,
-      /^http:\/\/localhost:\d+$/,
-    ],
+    origin: dynamicOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
   });
 
   app.useGlobalPipes(
@@ -33,6 +40,7 @@ async function bootstrap() {
     .setDescription('Stacks-native embedded wallet infrastructure — like Privy for Stacks')
     .setVersion('0.1.0')
     .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
     .build();
 
   SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));

@@ -1,18 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TokenService } from '../token/token.service';
 import { getProviderConfigs, OAuthProviderConfig, OAuthProfile } from './oauth-config';
+import { Redis } from 'ioredis';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import * as crypto from 'crypto';
-import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class OAuthService {
   private readonly logger = new Logger(OAuthService.name);
-  private readonly jwtSecret: string;
-  private readonly sessionDurationMs = 2 * 60 * 60 * 1000; // 2 hours
+  private readonly sessionDurationMs = 2 * 60 * 60 * 1000;
 
-  constructor(private prisma: PrismaService) {
-    this.jwtSecret = process.env.JWT_SECRET ?? 'velumx-dev-secret-change-in-prod';
-  }
+  constructor(
+    private prisma: PrismaService,
+    private tokenService: TokenService,
+    @Inject(REDIS_CLIENT) private redis: Redis,
+  ) {}
 
   getRedirectBase(): string {
     return process.env.OAUTH_REDIRECT_BASE ?? 'http://localhost:3001';
@@ -20,6 +23,19 @@ export class OAuthService {
 
   getProviders(): string[] {
     return ['google', 'github', 'discord', 'twitter', 'apple', 'email'];
+  }
+
+  async createState(provider: string): Promise<string> {
+    const state = crypto.randomBytes(32).toString('hex');
+    await this.redis.set(`csrf:${state}`, provider, 'EX', 300);
+    return state;
+  }
+
+  async validateState(state: string, provider: string): Promise<boolean> {
+    const stored = await this.redis.get(`csrf:${state}`);
+    if (!stored) return false;
+    await this.redis.del(`csrf:${state}`);
+    return stored === provider;
   }
 
   getAuthUrl(provider: string, state: string): string {
@@ -39,27 +55,37 @@ export class OAuthService {
 
   async handleCallback(provider: string, code: string): Promise<{
     profile: OAuthProfile;
-    sessionToken: string;
-    expiresAt: Date;
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
   }> {
     const configs = getProviderConfigs(this.getRedirectBase());
     const config = configs[provider];
     if (!config) throw new Error(`Unknown provider: ${provider}`);
 
-    const accessToken = await this.exchangeCodeForToken(config, code);
-    const userData = await this.fetchUserInfo(config, accessToken);
+    const providerAccessToken = await this.exchangeCodeForToken(config, code);
+    const userData = await this.fetchUserInfo(config, providerAccessToken);
     const profile = config.profileTransform(userData);
 
     const userId = `${provider}:${profile.providerUserId}`;
-    const sessionToken = this.issueSessionToken(userId, profile);
-    const expiresAt = new Date(Date.now() + this.sessionDurationMs);
+
+    const tokens = await this.tokenService.issueTokens({
+      sub: userId,
+      email: profile.email || '',
+      name: profile.name || '',
+      provider,
+      avatarUrl: profile.avatarUrl,
+    });
+
+    const expiresAt = new Date(Date.now() + tokens.expiresIn);
+    const sessionExpiresAt = new Date(Date.now() + this.sessionDurationMs);
 
     await this.prisma.oAuthSession.upsert({
-      where: { sessionToken },
+      where: { sessionToken: tokens.refreshToken },
       update: {
-        accessToken,
+        accessToken: providerAccessToken,
         tokenExpiresAt: new Date(Date.now() + 3600 * 1000),
-        sessionExpiresAt: expiresAt,
+        sessionExpiresAt,
       },
       create: {
         userId,
@@ -68,19 +94,23 @@ export class OAuthService {
         email: profile.email,
         name: profile.name,
         avatarUrl: profile.avatarUrl,
-        accessToken,
-        sessionToken,
-        sessionExpiresAt: expiresAt,
+        accessToken: providerAccessToken,
+        sessionToken: tokens.refreshToken,
+        sessionExpiresAt,
       },
     });
 
-    return { profile, sessionToken, expiresAt };
-  }
+    const sessionKey = `session:${userId}`;
+    await this.redis.hset(sessionKey, {
+      email: profile.email ?? '',
+      name: profile.name ?? '',
+      provider,
+      avatarUrl: profile.avatarUrl ?? '',
+      lastLoginAt: new Date().toISOString(),
+    });
+    await this.redis.expire(sessionKey, Math.floor(this.sessionDurationMs / 1000));
 
-  private issueSessionToken(userId: string, profile: OAuthProfile): string {
-    return crypto.createHmac('sha256', this.jwtSecret)
-      .update(`${userId}:${Date.now()}:${crypto.randomBytes(16).toString('hex')}`)
-      .digest('hex');
+    return { profile, ...tokens };
   }
 
   private async exchangeCodeForToken(config: OAuthProviderConfig, code: string): Promise<string> {
@@ -126,47 +156,79 @@ export class OAuthService {
     return response.json();
   }
 
-  async validateSession(sessionToken: string): Promise<{
+  async validateAccessToken(accessToken: string): Promise<{
     userId: string;
     email: string;
     name: string;
     avatarUrl?: string;
     provider: string;
   } | null> {
-    const session = await this.prisma.oAuthSession.findUnique({
-      where: { sessionToken },
-    });
-
-    if (!session) return null;
-    if (new Date() > session.sessionExpiresAt) {
-      await this.prisma.oAuthSession.delete({ where: { sessionToken } });
-      return null;
-    }
+    const payload = await this.tokenService.verifyAccessToken(accessToken);
+    if (!payload) return null;
 
     return {
-      userId: session.userId,
-      email: session.email ?? '',
-      name: session.name ?? '',
-      avatarUrl: session.avatarUrl ?? undefined,
-      provider: session.provider,
+      userId: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      avatarUrl: payload.avatarUrl,
+      provider: payload.provider,
     };
   }
 
-  async revokeSession(sessionToken: string): Promise<void> {
-    await this.prisma.oAuthSession.deleteMany({
-      where: { sessionToken },
+  async refreshSession(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  } | null> {
+    const revoked = await this.tokenService.isRefreshTokenRevoked(refreshToken);
+    if (revoked) return null;
+
+    const tokens = await this.tokenService.refreshAccessToken(refreshToken);
+    if (!tokens) return null;
+
+    await this.prisma.oAuthSession.update({
+      where: { sessionToken: refreshToken },
+      data: {
+        sessionToken: tokens.refreshToken,
+        sessionExpiresAt: new Date(Date.now() + this.sessionDurationMs),
+      },
     });
+
+    return tokens;
+  }
+
+  async revokeSession(accessToken: string, refreshToken?: string): Promise<void> {
+    if (refreshToken) {
+      await this.tokenService.revokeRefreshToken(refreshToken);
+      await this.prisma.oAuthSession.deleteMany({ where: { sessionToken: refreshToken } });
+    }
+
+    const payload = await this.tokenService.verifyAccessToken(accessToken);
+    if (payload) {
+      await this.redis.del(`session:${payload.sub}`);
+      await this.tokenService.revokeAllUserSessions(payload.sub);
+    }
+  }
+
+  async storeCsrfState(state: string, provider: string): Promise<void> {
+    await this.redis.set(`csrf:${state}`, provider, 'EX', 300);
+  }
+
+  async checkCsrfState(state: string, provider: string): Promise<boolean> {
+    const stored = await this.redis.get(`csrf:${state}`);
+    if (!stored || stored !== provider) return false;
+    await this.redis.del(`csrf:${state}`);
+    return true;
   }
 
   // ─── Email Magic Link ────────────────────────────────────────────────
 
-  private magicCodes = new Map<string, { code: string; expiresAt: number }>();
-
   async sendMagicLink(email: string): Promise<void> {
     const code = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const expiresAt = Date.now() + 15 * 60 * 1000;
 
-    this.magicCodes.set(email.toLowerCase(), { code, expiresAt });
+    const key = `magic:${email.toLowerCase()}`;
+    await this.redis.set(key, JSON.stringify({ code, expiresAt }), 'EX', 900);
 
     this.logger.log(`[MAGIC LINK] Email: ${email}, Code: ${code}`);
 
@@ -193,18 +255,22 @@ export class OAuthService {
 
   async verifyMagicLink(email: string, code: string): Promise<{
     profile: OAuthProfile;
-    sessionToken: string;
-    expiresAt: Date;
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
   }> {
-    const entry = this.magicCodes.get(email.toLowerCase());
-    if (!entry) throw new Error('No magic link code found for this email');
+    const key = `magic:${email.toLowerCase()}`;
+    const raw = await this.redis.get(key);
+    if (!raw) throw new Error('No magic link code found for this email');
+
+    const entry = JSON.parse(raw);
     if (Date.now() > entry.expiresAt) {
-      this.magicCodes.delete(email.toLowerCase());
+      await this.redis.del(key);
       throw new Error('Magic link code expired');
     }
     if (entry.code !== code) throw new Error('Invalid magic link code');
 
-    this.magicCodes.delete(email.toLowerCase());
+    await this.redis.del(key);
 
     const userId = `email:${email.toLowerCase()}`;
     const profile: OAuthProfile = {
@@ -214,23 +280,29 @@ export class OAuthService {
       provider: 'email',
     };
 
-    const sessionToken = this.issueSessionToken(userId, profile);
-    const expiresAt = new Date(Date.now() + this.sessionDurationMs);
+    const tokens = await this.tokenService.issueTokens({
+      sub: userId,
+      email: profile.email || '',
+      name: profile.name || '',
+      provider: 'email',
+    });
+
+    const sessionExpiresAt = new Date(Date.now() + this.sessionDurationMs);
 
     await this.prisma.oAuthSession.upsert({
-      where: { sessionToken },
-      update: { sessionExpiresAt: expiresAt },
+      where: { sessionToken: tokens.refreshToken },
+      update: { sessionExpiresAt },
       create: {
         userId,
         provider: 'email',
         providerUserId: email.toLowerCase(),
         email,
         name: email.split('@')[0],
-        sessionToken,
-        sessionExpiresAt: expiresAt,
+        sessionToken: tokens.refreshToken,
+        sessionExpiresAt,
       },
     });
 
-    return { profile, sessionToken, expiresAt };
+    return { profile, ...tokens };
   }
 }

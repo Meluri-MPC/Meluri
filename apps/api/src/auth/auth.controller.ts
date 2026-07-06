@@ -45,11 +45,22 @@ export class AuthController {
   @Post('mpc/provision')
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('x-api-key')
-  @ApiOperation({ summary: 'Provision MPC organization for this API key' })
+  @ApiOperation({ summary: 'Provision MPC organization for this API key (via Turnkey)' })
   provisionMpc(
     @ApiKey() apiKey: any,
     @Body() body: { appName: string; allowedDomains: string[] },
   ) {
     return this.authService.provisionMpcOrg(apiKey.id, body.appName, body.allowedDomains);
+  }
+
+  @Post('mpc/provision-native')
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('x-api-key')
+  @ApiOperation({ summary: 'Provision MPC organization using native MPC (no Turnkey)' })
+  provisionNativeMpc(
+    @ApiKey() apiKey: any,
+    @Body() body: { appName: string; allowedDomains: string[] },
+  ) {
+    return this.authService.provisionNativeMpcOrg(apiKey.id, body.appName, body.allowedDomains);
   }
 }

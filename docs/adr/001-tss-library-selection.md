@@ -1,7 +1,8 @@
 # ADR 001: TSS Library Selection for VelumX MPC
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-05-11  
+**Implemented:** 2026-07  
 **Deciders:** VelumX MPC Engineering  
 
 ---
