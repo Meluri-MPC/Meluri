@@ -8,7 +8,19 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "nest start",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "test": "npx tsx test/chaos/chaos.spec.ts && npx tsx test/dkg/dkg.protocol.spec.ts && npx tsx test/kms/kms.spec.ts && npx tsx test/load/load-test.spec.ts && npx tsx test/recovery/recovery.spec.ts && npx tsx test/round-trip/round-trip.spec.ts && npx tsx test/signing/signing.protocol.spec.ts && npx tsx test/signing-ceremony/signing-ceremony.spec.ts && npx tsx test/sync/sync.spec.ts && npx tsx test/topology/topology.spec.ts && npx tsx test/transport/transport.spec.ts",
+    "test:chaos": "npx tsx test/chaos/chaos.spec.ts",
+    "test:dkg": "npx tsx test/dkg/dkg.protocol.spec.ts",
+    "test:kms": "npx tsx test/kms/kms.spec.ts",
+    "test:load": "npx tsx test/load/load-test.spec.ts",
+    "test:recovery": "npx tsx test/recovery/recovery.spec.ts",
+    "test:round-trip": "npx tsx test/round-trip/round-trip.spec.ts",
+    "test:signing": "npx tsx test/signing/signing.protocol.spec.ts",
+    "test:signing-ceremony": "npx tsx test/signing-ceremony/signing-ceremony.spec.ts",
+    "test:sync": "npx tsx test/sync/sync.spec.ts",
+    "test:topology": "npx tsx test/topology/topology.spec.ts",
+    "test:transport": "npx tsx test/transport/transport.spec.ts"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",

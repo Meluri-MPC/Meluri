@@ -14,6 +14,9 @@
     "db:migrate": "pnpm --filter @velumx/api db:migrate",
     "db:generate": "pnpm --filter @velumx/api db:generate",
     "db:studio": "pnpm --filter @velumx/api db:studio",
+    "test": "pnpm --filter \"./apps/mpc\" test && pnpm --filter \"./packages/sdk\" test",
+    "test:mpc": "pnpm --filter \"./apps/mpc\" test",
+    "test:sdk": "pnpm --filter \"./packages/sdk\" test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"

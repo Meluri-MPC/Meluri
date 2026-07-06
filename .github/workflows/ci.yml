@@ -67,8 +67,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Run tests
-        run: pnpm test -- --run 2>&1 || echo "No test scripts defined — skipping"
+      - name: Run MPC tests
+        run: pnpm --filter "./apps/mpc" test
+      - name: Run SDK tests
+        run: pnpm --filter "./packages/sdk" test
 
   build:
     name: Build

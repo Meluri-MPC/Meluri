@@ -93,7 +93,16 @@
     "lint": "tsc --noEmit",
     "prepublishOnly": "tsup",
     "size": "size-limit",
-    "size:cdn": "gzip -c dist/cdn/velumx.iife.js | wc -c"
+    "size:cdn": "gzip -c dist/cdn/velumx.iife.js | wc -c",
+    "test": "npx tsx test/ui/components.spec.tsx && npx tsx test/wallets/connectors.spec.ts && npx tsx test/wallets/detection.spec.ts && npx tsx test/wallets/discovery.spec.ts && npx tsx test/wallets/events.spec.ts && npx tsx test/wallets/network.spec.ts && npx tsx test/wallets/persistence.spec.ts && npx tsx test/wallets/signing.spec.ts",
+    "test:ui": "npx tsx test/ui/components.spec.tsx",
+    "test:connectors": "npx tsx test/wallets/connectors.spec.ts",
+    "test:detection": "npx tsx test/wallets/detection.spec.ts",
+    "test:discovery": "npx tsx test/wallets/discovery.spec.ts",
+    "test:events": "npx tsx test/wallets/events.spec.ts",
+    "test:network": "npx tsx test/wallets/network.spec.ts",
+    "test:persistence": "npx tsx test/wallets/persistence.spec.ts",
+    "test:signing": "npx tsx test/wallets/signing.spec.ts"
   },
   "peerDependencies": {
     "react": "^18.0.0",
@@ -123,6 +132,8 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "jsdom": "^25.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "size-limit": "^11.2.0",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",
