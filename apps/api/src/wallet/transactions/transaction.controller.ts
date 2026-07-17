@@ -58,14 +58,20 @@ export class WalletTransactionController {
   }
 
   @Post('broadcast')
-  @ApiOperation({ summary: 'Broadcast a signed transaction' })
+  @ApiOperation({
+    summary: 'Broadcast a signed transaction',
+    description:
+      'Routes via the VelumX relayer (sponsored) if the organisation has `sponsorFees` enabled. ' +
+      'Otherwise broadcasts directly to Hiro — the end-user pays their own fee.',
+  })
   async broadcast(
     @ApiKey() apiKey: any,
     @Param('id') id: string,
-    @Body() body: { txHex: string; delegation?: string; sponsored?: boolean },
+    @Body() body: { txHex: string; delegation?: string },
   ) {
     const wallet = await this.getWallet(apiKey, id);
-    return this.txBuilder.broadcast(wallet, body, body.sponsored !== false);
+    const org = apiKey.mpcOrg ?? { sponsorFees: false, relayerUrl: null };
+    return this.txBuilder.broadcast(wallet, body, org);
   }
 
   @Post('estimate-fee')

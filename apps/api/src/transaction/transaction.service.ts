@@ -5,13 +5,14 @@ import { RelayerService } from '../relayer/relayer.service';
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
 
-  constructor(private relayer: RelayerService) {}
+  constructor(private readonly relayer: RelayerService) {}
 
-  async sponsor(
+  async send(
     txHex: string,
-    userId: string,
-    network: string,
-  ): Promise<{ txid: string; status: string }> {
-    return this.relayer.sponsorTransaction(txHex, { network: network as any });
+    network: 'mainnet' | 'testnet',
+    sponsorFees: boolean,
+    relayerUrl?: string | null,
+  ) {
+    return this.relayer.broadcast(txHex, { network, sponsorFees, relayerUrl });
   }
 }

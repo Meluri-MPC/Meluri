@@ -4,7 +4,6 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { TurnkeyModule } from './turnkey/turnkey.module';
 import { WalletModule } from './wallet/wallet.module';
 import { WalletTransactionModule } from './wallet/transactions/transaction.module';
 import { MultiChainModule } from './wallet/multi-chain/multi-chain.module';
@@ -13,9 +12,9 @@ import { IndexingModule } from './indexing/indexing.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { RelayerModule } from './relayer/relayer.module';
 import { SessionModule } from './session/session.module';
-import { SimpleWalletModule } from './simple-wallet/simple-wallet.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { TokenModule } from './token/token.module';
+import { MpcModule } from './mpc/mpc.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -34,7 +33,7 @@ import { AppController } from './app.controller';
     TokenModule,
     PrismaModule,
     AuthModule,
-    TurnkeyModule,
+    MpcModule,
     WalletModule,
     WalletTransactionModule,
     MultiChainModule,
@@ -43,7 +42,6 @@ import { AppController } from './app.controller';
     TransactionModule,
     RelayerModule,
     SessionModule,
-    SimpleWalletModule,
     OAuthModule,
   ],
   controllers: [AppController],

@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
@@ -6,7 +12,7 @@ import * as crypto from 'crypto';
 export class ApiKeyGuard implements CanActivate {
   private readonly logger = new Logger(ApiKeyGuard.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -31,11 +37,16 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('API key is not active');
     }
 
+    // Update lastUsedAt asynchronously — don't block the request
+    this.prisma.apiKey
+      .update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } })
+      .catch((err) => this.logger.warn(`Failed to update lastUsedAt: ${err.message}`));
+
     request.apiKey = apiKey;
     return true;
   }
 
-  private async constantTimeDelay(): Promise<void> {
-    await new Promise((r) => setTimeout(r, 100 + Math.random() * 100));
+  private constantTimeDelay(): Promise<void> {
+    return new Promise((r) => setTimeout(r, 100 + Math.random() * 100));
   }
 }

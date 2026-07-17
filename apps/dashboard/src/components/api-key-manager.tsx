@@ -54,26 +54,26 @@ export function ApiKeyManager({ developerId, initialKeys }: { developerId: strin
       <button
         onClick={() => setShowCreate(true)}
         disabled={keys.filter((k) => k.status === 'Active').length >= 5}
-        className="flex items-center gap-2 px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-white/90 text-black disabled:opacity-40 rounded-[14px] text-sm font-medium transition-colors"
       >
         <Plus size={16} /> New Key
       </button>
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-96" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
+          <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-6 w-96" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold mb-4">Create API Key</h2>
             <input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Key name (e.g. production, staging)"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-velumx-500"
+              className="w-full bg-[#111111] border border-white/[0.08] rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-white/20 text-white placeholder:text-white/25"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200">Cancel</button>
-              <button onClick={handleCreate} disabled={creating || !name.trim()} className="px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-white/40 hover:text-white/80 rounded-[14px] transition-colors">Cancel</button>
+              <button onClick={handleCreate} disabled={creating || !name.trim()} className="px-4 py-2 bg-white hover:bg-white/90 text-black disabled:opacity-40 rounded-[14px] text-sm font-medium transition-colors">
                 {creating ? 'Creating...' : 'Create'}
               </button>
             </div>
@@ -82,23 +82,23 @@ export function ApiKeyManager({ developerId, initialKeys }: { developerId: strin
       )}
 
       {newKey && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-[28rem]">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-6 w-[28rem]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-emerald-400">API Key Created</h2>
-              <button onClick={() => setNewKey(null)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setNewKey(null)}><X size={20} className="text-white/40" /></button>
             </div>
-            <p className="text-sm text-gray-400 mb-3">Copy this key now. You won&apos;t be able to see it again.</p>
-            <div className="bg-gray-950 border border-gray-800 rounded-lg p-3 flex items-center justify-between mb-4">
-              <code className="text-sm text-velumx-400 break-all mr-2">{newKey}</code>
+            <p className="text-sm text-white/60 mb-3">Copy this key now. You won&apos;t be able to see it again.</p>
+            <div className="bg-black border border-white/[0.08] rounded-lg p-3 flex items-center justify-between mb-4">
+              <code className="text-sm text-white/80 break-all mr-2">{newKey}</code>
               <button
                 onClick={() => { navigator.clipboard.writeText(newKey); setCopied(true); toast.success('Copied!'); }}
-                className="p-1.5 hover:bg-gray-800 rounded"
+                className="p-1.5 hover:bg-white/[0.06] rounded"
               >
-                {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} className="text-gray-400" />}
+                {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} className="text-white/40" />}
               </button>
             </div>
-            <button onClick={() => setNewKey(null)} className="w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm">I&apos;ve saved my key</button>
+            <button onClick={() => setNewKey(null)} className="w-full py-2 bg-white/[0.06] hover:bg-white/[0.10] rounded-[14px] text-sm text-white/80 transition-colors">I&apos;ve saved my key</button>
           </div>
         </div>
       )}

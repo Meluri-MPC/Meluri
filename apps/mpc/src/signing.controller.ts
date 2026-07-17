@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { MpcSigningService } from './grpc/signing.service';
+import { ServiceAuthGuard } from './guards/service-auth.guard';
 
 @Controller('signing')
+@UseGuards(ServiceAuthGuard)
 export class SigningController {
   constructor(private readonly signingService: MpcSigningService) {}
 

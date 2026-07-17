@@ -37,33 +37,33 @@ export default async function BillingPage() {
   ];
 
   return (
-    <div>
+    <div className="animate-fadeIn">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Billing</h1>
         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400">
           Coming Soon
         </span>
       </div>
-      <p className="text-gray-400 mb-8">Manage your subscription and view usage</p>
+      <p className="text-white/60 mb-8">Manage your subscription and view usage</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => (
-          <div key={plan.name} className={`bg-gray-900 border rounded-xl p-6 ${plan.current ? 'border-velumx-500/50 ring-1 ring-velumx-500/20' : 'border-gray-800'}`}>
+          <div key={plan.name} className={`bg-[#0d0d0d] border rounded-[14px] p-6 ${plan.current ? 'border-emerald-500/20 ring-1 ring-emerald-500/10' : 'border-white/[0.08]'}`}>
             <div className="flex items-center gap-2 mb-1">
-              {plan.name === 'Starter' && <Zap size={18} className="text-velumx-400" />}
-              {plan.name === 'Pro' && <CreditCard size={18} className="text-velumx-400" />}
-              {plan.name === 'Enterprise' && <ShieldIcon size={18} className="text-velumx-400" />}
+              {plan.name === 'Starter' && <Zap size={18} className="text-white/60" />}
+              {plan.name === 'Pro' && <CreditCard size={18} className="text-white/60" />}
+              {plan.name === 'Enterprise' && <ShieldIcon size={18} className="text-white/60" />}
               <h2 className="text-lg font-semibold">{plan.name}</h2>
             </div>
             <div className="mb-3">
               <span className="text-3xl font-bold">{plan.price}</span>
-              {plan.period && <span className="text-gray-500 text-sm">{plan.period}</span>}
+              {plan.period && <span className="text-white/40 text-sm">{plan.period}</span>}
             </div>
-            <p className="text-gray-400 text-sm mb-4">{plan.description}</p>
+            <p className="text-white/60 text-sm mb-4">{plan.description}</p>
 
             <ul className="space-y-2 mb-6">
               {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
+                <li key={f} className="flex items-start gap-2 text-sm text-white/70">
                   <Check size={14} className="text-emerald-400 mt-0.5 shrink-0" />
                   {f}
                 </li>
@@ -71,10 +71,10 @@ export default async function BillingPage() {
             </ul>
 
             <button
-              className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full py-2.5 rounded-[14px] text-sm font-medium transition-colors ${
                 plan.current
-                  ? 'bg-gray-800 text-gray-400 cursor-default'
-                  : 'bg-velumx-600 hover:bg-velumx-700 text-white'
+                  ? 'bg-white/[0.06] text-white/40 cursor-default'
+                  : 'bg-white hover:bg-white/90 text-black'
               }`}
               disabled={plan.current}
             >
@@ -84,29 +84,29 @@ export default async function BillingPage() {
         ))}
       </div>
 
-      <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="mt-8 bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-6">
         <h2 className="text-lg font-semibold mb-4">Current Usage (Starter)</h2>
         <div className="space-y-4">
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-400">API Requests</span>
-              <span className="text-gray-300">— / 10,000</span>
+              <span className="text-white/60">API Requests</span>
+              <span className="text-white/70">— / 10,000</span>
             </div>
-            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-velumx-500 rounded-full" style={{ width: '0%' }} />
+            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className="h-full bg-white/40 rounded-full" style={{ width: '0%' }} />
             </div>
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-400">MPC Wallets</span>
-              <span className="text-gray-300">— / 100</span>
+              <span className="text-white/60">MPC Wallets</span>
+              <span className="text-white/70">— / 100</span>
             </div>
-            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-velumx-500 rounded-full" style={{ width: '0%' }} />
+            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className="h-full bg-white/40 rounded-full" style={{ width: '0%' }} />
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-4">Usage tracking will be enabled when billing goes live.</p>
+        <p className="text-xs text-white/25 mt-4">Usage tracking will be enabled when billing goes live.</p>
       </div>
     </div>
   );

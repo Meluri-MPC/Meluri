@@ -20,39 +20,39 @@ export default async function MpcConfigPage() {
   });
 
   return (
-    <div>
+    <div className="animate-fadeIn">
       <h1 className="text-2xl font-bold mb-2">MPC Configuration</h1>
-      <p className="text-gray-400 mb-8">Provision Turnkey MPC for your API keys</p>
+      <p className="text-white/60 mb-8">Provision MPC for your API keys</p>
 
       <div className="space-y-4">
         {apiKeys.length === 0 && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
+          <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-8 text-center text-white/25">
             Create an API key first before configuring MPC.
           </div>
         )}
         {apiKeys.map((key) => (
-          <div key={key.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div key={key.id} className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5 hover:border-white/[0.14] transition-colors">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-medium">{key.name}</h3>
-                <p className="text-sm text-gray-500">{key.keyPrefix}...</p>
+                <p className="text-sm text-white/40">{key.keyPrefix}...</p>
               </div>
               {key.mpcOrg ? (
                 <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
                   Active &mdash; {key.mpcOrg.walletCount} wallets
                 </span>
               ) : (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400">
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/[0.06] text-white/40">
                   Not provisioned
                 </span>
               )}
             </div>
             {key.mpcOrg ? (
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-gray-500">App Name:</span> <span className="text-gray-200">{key.mpcOrg.appName}</span></div>
-                <div><span className="text-gray-500">Domains:</span> <span className="text-gray-200">{(key.mpcOrg as any).allowedDomains?.join(', ') || 'All'}</span></div>
-                <div><span className="text-gray-500">Wallets:</span> <span className="text-gray-200">{key.mpcOrg.walletCount}</span></div>
-                <div><span className="text-gray-500">Turnkey Org:</span> <span className="text-gray-200 font-mono text-xs">{key.mpcOrg.turnkeyOrgId.slice(0, 16)}...</span></div>
+                <div><span className="text-white/40">App Name:</span> <span className="text-white/80">{key.mpcOrg.appName}</span></div>
+                <div><span className="text-white/40">Domains:</span> <span className="text-white/80">{(key.mpcOrg as any).allowedDomains?.join(', ') || 'All'}</span></div>
+                <div><span className="text-white/40">Wallets:</span> <span className="text-white/80">{key.mpcOrg.walletCount}</span></div>
+                <div><span className="text-white/40">Org ID:</span> <span className="text-white/80 font-mono text-xs">{key.mpcOrg.turnkeyOrgId.slice(0, 16)}...</span></div>
               </div>
             ) : (
               <MpcConfigForm apiKeyId={key.id} />

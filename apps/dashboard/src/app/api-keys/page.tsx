@@ -25,29 +25,29 @@ export default async function ApiKeysPage() {
   });
 
   return (
-    <div>
+    <div className="animate-fadeIn">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">API Keys</h1>
         <ApiKeyManager developerId={developer.id} initialKeys={keys as any} />
       </div>
-      <p className="text-gray-400 mb-8">Manage your API keys for SDK integration</p>
+      <p className="text-white/60 mb-8">Manage your API keys for SDK integration</p>
 
       <div className="space-y-3">
         {keys.length === 0 && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
+          <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-8 text-center text-white/25">
             No API keys yet. Create your first one to get started.
           </div>
         )}
         {keys.map((key) => (
-          <div key={key.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div key={key.id} className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5 hover:border-white/[0.14] transition-colors">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">{key.name}</h3>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-white/40 mt-0.5">
                   {key.keyPrefix}... &middot; Created {new Date(key.createdAt).toLocaleDateString()}
                 </p>
                 {key.mpcOrg && (
-                  <p className="text-xs text-velumx-400 mt-1">
+                  <p className="text-xs text-[#007aff] mt-1">
                     MPC enabled — {key.mpcOrg.walletCount} wallets
                   </p>
                 )}
@@ -56,7 +56,7 @@ export default async function ApiKeysPage() {
                 <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                   key.status === 'Active'
                     ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-red-500/10 text-red-400'
+                    : 'bg-rose-500/10 text-rose-400'
                 }`}>
                   {key.status}
                 </span>

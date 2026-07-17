@@ -34,27 +34,27 @@ export function MpcConfigForm({ apiKeyId }: { apiKeyId: string }) {
   return (
     <form onSubmit={handleProvision} className="flex gap-3 items-end">
       <div className="flex-1">
-        <label className="block text-xs text-gray-500 mb-1">App Name</label>
+        <label className="block text-[10px] uppercase tracking-widest text-white/40 mb-1">App Name</label>
         <input
           value={appName}
           onChange={(e) => setAppName(e.target.value)}
           placeholder="My DApp"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-velumx-500"
+          className="w-full bg-[#111111] border border-white/[0.08] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/20 text-white placeholder:text-white/25"
         />
       </div>
       <div className="flex-1">
-        <label className="block text-xs text-gray-500 mb-1">Allowed Domains (comma-separated)</label>
+        <label className="block text-[10px] uppercase tracking-widest text-white/40 mb-1">Allowed Domains (comma-separated)</label>
         <input
           value={domains}
           onChange={(e) => setDomains(e.target.value)}
           placeholder="myapp.xyz, localhost:3000"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-velumx-500"
+          className="w-full bg-[#111111] border border-white/[0.08] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/20 text-white placeholder:text-white/25"
         />
       </div>
       <button
         type="submit"
         disabled={loading || !appName.trim()}
-        className="px-4 py-2 bg-velumx-600 hover:bg-velumx-700 disabled:opacity-50 rounded-lg text-sm whitespace-nowrap"
+        className="px-4 py-2 bg-white hover:bg-white/90 text-black disabled:opacity-40 rounded-[14px] text-sm font-medium whitespace-nowrap transition-colors"
       >
         {loading ? 'Provisioning...' : 'Provision MPC'}
       </button>

@@ -1,24 +1,64 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { MpcClientService } from './mpc-client.service';
+import { publicKeyToAddress } from '@stacks/transactions';
 import * as crypto from 'crypto';
 
+// ─── KMS envelope stored in DB ────────────────────────────────────────────
+
+interface EncryptedShareBlob {
+  ciphertext: string; // base64 AES-256-GCM
+  iv: string;         // base64
+  tag: string;        // base64
+  salt: string;       // base64 HKDF salt
+  kmsKeyId: string;   // identifier of the key used
+  version: number;    // envelope version for future migration
+}
+
 @Injectable()
-export class MpcProvisionService {
+export class MpcProvisionService implements OnModuleInit {
   private readonly logger = new Logger(MpcProvisionService.name);
+  private encryptionKey!: Buffer; // 32-byte AES-256 key
 
   constructor(
-    private prisma: PrismaService,
-    private mpcClient: MpcClientService,
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly mpcClient: MpcClientService,
   ) {}
 
-  async provisionMpcOrg(apiKeyId: string, appName: string, allowedDomains: string[]) {
+  onModuleInit(): void {
+    const keyHex = this.config.get<string>('ENCRYPTION_KEY');
+    if (!keyHex) {
+      // Startup guard — prevents silent zero-key encryption
+      throw new Error(
+        'ENCRYPTION_KEY environment variable is required (64 hex characters). ' +
+        'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    }
+    if (keyHex.length !== 64 || !/^[0-9a-fA-F]+$/.test(keyHex)) {
+      throw new Error('ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)');
+    }
+    this.encryptionKey = Buffer.from(keyHex, 'hex');
+    this.logger.log('Share encryption key loaded');
+  }
+
+  // ─── Provisioning ──────────────────────────────────────────────────────
+
+  async provisionMpcOrg(
+    apiKeyId: string,
+    appName: string,
+    allowedDomains: string[],
+    sponsorFees = false,
+    relayerUrl?: string,
+  ) {
     const existing = await this.prisma.mpcOrganization.findUnique({ where: { apiKeyId } });
     if (existing) return existing;
 
     const walletId = crypto.randomUUID();
     const tenantId = `tenant_${apiKeyId}`;
 
+    // Run DKG on the MPC service
     const dkgResult = await this.mpcClient.initiateDkg(walletId, tenantId);
 
     const org = await this.prisma.mpcOrganization.create({
@@ -27,10 +67,13 @@ export class MpcProvisionService {
         turnkeyOrgId: `mpc-native-${walletId}`,
         appName,
         allowedDomains,
+        sponsorFees,
+        relayerUrl: relayerUrl ?? null,
       },
     });
 
-    const stxAddress = this.deriveStacksAddress(dkgResult.publicKey);
+    // Derive Stacks address using the official @stacks/transactions helper
+    const stxAddress = publicKeyToAddress(dkgResult.publicKey, 'testnet');
 
     const wallet = await this.prisma.mpcWallet.create({
       data: {
@@ -40,15 +83,23 @@ export class MpcProvisionService {
         label: `${appName}-default`,
         stxAddress,
         publicKey: dkgResult.publicKey,
+        // turnkeyWalletId repurposed as mpc-native wallet identifier
         turnkeyWalletId: `mpc-native-wallet-${walletId}`,
         network: 'testnet',
       },
     });
 
+    // Encrypt and store each key share
     for (const share of dkgResult.shares) {
-      const holderId = share.partyId === 1 ? 'client'
+      const holderId =
+        share.partyId === 1 ? 'client'
         : share.partyId === 2 ? 'server-s1'
         : 'server-s2';
+
+      const encryptedBlob = this.encryptShare(
+        share.share,
+        `wallet:${walletId}:share:${share.partyId}`,
+      );
 
       await this.prisma.keyShare.create({
         data: {
@@ -56,8 +107,8 @@ export class MpcProvisionService {
           orgId: org.id,
           shareIndex: share.partyId,
           holderId,
-          encryptedShare: this.encryptShare(share.share),
-          encryptionKeyId: 'local-dev',
+          encryptedShare: JSON.stringify(encryptedBlob),
+          encryptionKeyId: 'local-aes256',
           publicKey: dkgResult.publicKey,
           dkgSessionId: walletId,
         },
@@ -65,50 +116,68 @@ export class MpcProvisionService {
     }
 
     this.logger.log(
-      `MPC org provisioned: orgId=${org.id}, walletId=${wallet.id}, address=${stxAddress}`,
+      `MPC org provisioned: orgId=${org.id}, walletId=${wallet.id}, stxAddress=${stxAddress}`,
     );
 
     return org;
   }
 
-  private encryptShare(share: string): string {
-    const key = process.env.ENCRYPTION_KEY ?? '0'.repeat(64);
+  // ─── Share Encryption / Decryption ─────────────────────────────────────
+
+  /**
+   * Encrypt a share value using AES-256-GCM with a unique IV and HKDF-derived key.
+   * The `context` binds the derived key to this specific wallet+share, preventing
+   * share substitution attacks.
+   */
+  private encryptShare(shareValue: string, context: string): EncryptedShareBlob {
     const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(key, 'hex'), iv);
-    const encrypted = Buffer.concat([cipher.update(share, 'utf8'), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-    return Buffer.concat([iv, encrypted, authTag]).toString('base64');
+    const salt = crypto.randomBytes(32);
+
+    // Derive a unique key per share: HKDF(masterKey, salt, context)
+    const derivedKey = crypto.hkdfSync('sha256', this.encryptionKey, salt, context, 32);
+
+    const cipher = crypto.createCipheriv('aes-256-gcm', derivedKey, iv);
+    const ciphertext = Buffer.concat([
+      cipher.update(shareValue, 'utf8'),
+      cipher.final(),
+    ]);
+    const tag = cipher.getAuthTag();
+
+    // Wipe derived key from memory
+    Buffer.from(derivedKey).fill(0);
+
+    return {
+      ciphertext: ciphertext.toString('base64'),
+      iv: iv.toString('base64'),
+      tag: tag.toString('base64'),
+      salt: salt.toString('base64'),
+      kmsKeyId: 'local-aes256',
+      version: 1,
+    };
   }
 
-  private deriveStacksAddress(publicKeyHex: string): string {
-    const pubkey = Buffer.from(publicKeyHex, 'hex');
-    const hash0 = crypto.createHash('sha256').update(pubkey).digest();
-    const hash1 = crypto.createHash('rmd160').update(hash0).digest();
-    const versioned = Buffer.concat([Buffer.from([0x16]), hash1]);
-    const checksum = crypto.createHash('sha256')
-      .update(crypto.createHash('sha256').update(versioned).digest())
-      .digest()
-      .subarray(0, 4);
-    const address = Buffer.concat([versioned, checksum]);
-    return this.base58CheckEncode(address);
-  }
+  /**
+   * Decrypt a share. Accepts JSON string or already-parsed blob.
+   */
+  decryptShare(encryptedShareJson: string, context: string): string {
+    const blob: EncryptedShareBlob = JSON.parse(encryptedShareJson);
 
-  private base58CheckEncode(data: Buffer): string {
-    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-    let num = 0n;
-    for (const byte of data) {
-      num = (num << 8n) | BigInt(byte);
+    const iv = Buffer.from(blob.iv, 'base64');
+    const tag = Buffer.from(blob.tag, 'base64');
+    const ciphertext = Buffer.from(blob.ciphertext, 'base64');
+    const salt = Buffer.from(blob.salt, 'base64');
+
+    const derivedKey = crypto.hkdfSync('sha256', this.encryptionKey, salt, context, 32);
+
+    try {
+      const decipher = crypto.createDecipheriv('aes-256-gcm', derivedKey, iv);
+      decipher.setAuthTag(tag);
+      const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+      Buffer.from(derivedKey).fill(0);
+      return plaintext.toString('utf8');
+    } catch {
+      Buffer.from(derivedKey).fill(0);
+      throw new Error('Share decryption failed — wrong key, corrupted data, or tampered blob');
     }
-    let result = '';
-    while (num > 0n) {
-      const rem = Number(num % 58n);
-      num = num / 58n;
-      result = ALPHABET[rem] + result;
-    }
-    for (const byte of data) {
-      if (byte === 0) result = '1' + result;
-      else break;
-    }
-    return 'SP' + result;
   }
 }

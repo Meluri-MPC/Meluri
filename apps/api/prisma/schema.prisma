@@ -44,6 +44,12 @@ model MpcOrganization {
   allowedAuthMethods  String[] @default(["google", "email"])
   walletCount         Int      @default(0)
   txCount             Int      @default(0)
+  /// Whether this developer has opted in to sponsoring fees for their end-users.
+  /// When true, transactions are routed through the VelumX relayer.
+  /// When false, transactions are broadcast directly — end-users pay their own fees.
+  sponsorFees         Boolean  @default(false)
+  /// Optional developer-supplied relayer URL override (if they run their own).
+  relayerUrl          String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   wallets             MpcWallet[]
@@ -162,13 +168,4 @@ model OAuthSession {
   @@index([provider, providerUserId])
 }
 
-model SimpleWallet {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  stxAddress String   @unique
-  publicKey  String   @unique
-  privateKey String
-  network    String   @default("testnet")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
+

@@ -55,42 +55,42 @@ export default async function AnalyticsPage() {
   const totalTxs = mpcOrg?.txCount ?? txCount;
 
   return (
-    <div>
+    <div className="animate-fadeIn">
       <h1 className="text-2xl font-bold mb-1">Analytics</h1>
-      <p className="text-gray-400 mb-8">Usage metrics for your application</p>
+      <p className="text-white/60 mb-8">Usage metrics for your application</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="API Requests Today" value="—" sub="Metrics collection enabled next sprint" color="text-velumx-400" />
+        <StatCard label="API Requests Today" value="—" sub="Metrics collection enabled next sprint" color="text-white" />
         <StatCard label="Active Wallets" value={String(totalWallets)} sub="Total MPC wallets" color="text-emerald-400" />
         <StatCard label="Transactions" value={String(totalTxs)} sub="All time" color="text-amber-400" />
-        <StatCard label="Active API Keys" value={String(apiKeys)} sub="Your keys" color="text-purple-400" />
+        <StatCard label="Active API Keys" value={String(apiKeys)} sub="Your keys" color="text-sky-400" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5">
           <h2 className="text-lg font-semibold mb-4">Transactions (Last 14 Days)</h2>
           {recentActivity.every((d) => d.count === 0) ? (
-            <p className="text-gray-500 text-center py-12">No transaction data yet. Start sending transactions to see activity here.</p>
+            <p className="text-white/40 text-center py-12">No transaction data yet. Start sending transactions to see activity here.</p>
           ) : (
             <div className="flex items-end gap-1 h-40">
               {recentActivity.map((d, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-xs text-gray-500">{d.count || ''}</span>
+                  <span className="text-xs text-white/40">{d.count || ''}</span>
                   <div
-                    className="w-full rounded-t bg-velumx-500/60 hover:bg-velumx-400 transition-colors"
+                    className="w-full rounded-t bg-white/10 hover:bg-white/20 transition-colors"
                     style={{ height: `${(d.count / maxTx) * 100}%`, minHeight: d.count > 0 ? 4 : 0 }}
                     title={`${d.label}: ${d.count} txs`}
                   />
-                  <span className="text-[10px] text-gray-600 rotate-45 origin-left whitespace-nowrap">{d.label}</span>
+                  <span className="text-[10px] text-white/25 rotate-45 origin-left whitespace-nowrap">{d.label}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5">
           <h2 className="text-lg font-semibold mb-4">API Usage</h2>
-          <p className="text-gray-500 text-center py-12">
+          <p className="text-white/40 text-center py-12">
             API request tracking is scheduled for the next release.
             <br />
             <span className="text-sm">Requests/day, error rates, and latency percentiles will appear here.</span>
@@ -99,15 +99,15 @@ export default async function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5">
           <h2 className="text-lg font-semibold mb-4">Auth Methods</h2>
           <div className="space-y-3">
-            <MetricBar label="Wallet (MPC)" value={totalWallets} max={Math.max(1, totalWallets)} color="bg-velumx-500" />
-            <MetricBar label="External Wallets" value={0} max={Math.max(1, totalWallets)} color="bg-purple-500" />
+            <MetricBar label="Wallet (MPC)" value={totalWallets} max={Math.max(1, totalWallets)} color="bg-white/60" />
+            <MetricBar label="External Wallets" value={0} max={Math.max(1, totalWallets)} color="bg-white/20" />
           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5">
           <h2 className="text-lg font-semibold mb-4">Network Split</h2>
           <div className="space-y-3">
             <MetricBar label="Mainnet" value={0} max={1} color="bg-emerald-500" />
@@ -115,19 +115,19 @@ export default async function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5">
           <h2 className="text-lg font-semibold mb-4">App Info</h2>
           <div className="space-y-2 text-sm">
-            <p className="text-gray-400">Name: <span className="text-gray-200">{mpcOrg?.appName ?? 'Not configured'}</span></p>
-            <p className="text-gray-400">Domains:</p>
+            <p className="text-white/60">Name: <span className="text-white/80">{mpcOrg?.appName ?? 'Not configured'}</span></p>
+            <p className="text-white/60">Domains:</p>
             {mpcOrg?.allowedDomains?.length ? (
-              <ul className="list-disc list-inside text-gray-300">
+              <ul className="list-disc list-inside text-white/70">
                 {(mpcOrg.allowedDomains as string[]).map((d) => (
                   <li key={d}>{d}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500">No domains configured</p>
+              <p className="text-white/25">No domains configured</p>
             )}
           </div>
         </div>
@@ -138,10 +138,10 @@ export default async function AnalyticsPage() {
 
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <p className="text-sm text-gray-400 mb-2">{label}</p>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{sub}</p>
+    <div className="bg-[#0d0d0d] border border-white/[0.08] rounded-[14px] p-5 hover:border-white/[0.14] transition-colors">
+      <p className="text-xs uppercase tracking-widest text-white/40 mb-2">{label}</p>
+      <p className={`text-3xl font-bold ${color}`}>{value}</p>
+      <p className="text-xs text-white/25 mt-1">{sub}</p>
     </div>
   );
 }
@@ -151,10 +151,10 @@ function MetricBar({ label, value, max, color }: { label: string; value: number;
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-400">{label}</span>
-        <span className="text-gray-300">{value}</span>
+        <span className="text-white/60">{label}</span>
+        <span className="text-white/70">{value}</span>
       </div>
-      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+      <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
       </div>
     </div>

@@ -171,19 +171,13 @@ export class TransactionBuilderService {
   async broadcast(
     wallet: any,
     dto: { txHex: string; delegation?: string },
-    sponsored = true,
-  ): Promise<{ txid: string; status: string }> {
-    if (sponsored) {
-      return this.relayer.sponsorTransaction(dto.txHex, {
-        network: wallet.network,
-      });
-    }
-
-    const result = await this.relayer.sponsorTransaction(dto.txHex, {
-      network: wallet.network,
+    org: { sponsorFees: boolean; relayerUrl?: string | null },
+  ): Promise<{ txid: string; status: string; sponsored: boolean }> {
+    return this.relayer.broadcast(dto.txHex, {
+      network: wallet.network as 'mainnet' | 'testnet',
+      sponsorFees: org.sponsorFees,
+      relayerUrl: org.relayerUrl,
     });
-
-    return result;
   }
 
   async estimateStxFee(): Promise<number> {
