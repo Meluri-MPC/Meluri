@@ -105,8 +105,8 @@
     "test:signing": "npx tsx test/wallets/signing.spec.ts"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -117,11 +117,11 @@
     }
   },
   "dependencies": {
-    "@noble/secp256k1": "^2.2.0",
-    "@stacks/encryption": "^7.4.0",
-    "@stacks/network": "^7.3.1",
-    "@stacks/transactions": "^7.4.0",
-    "@turnkey/http": "^4.0.0",
+    "@noble/secp256k1": "^3.1.0",
+    "@stacks/encryption": "^7.6.0",
+    "@stacks/network": "^7.6.0",
+    "@stacks/transactions": "^7.6.0",
+    "@turnkey/http": "^6.3.0",
     "@turnkey/iframe-stamper": "^2.11.0",
     "ws": "^8.21.0"
   },
@@ -130,12 +130,12 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^26.0.1",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "@types/ws": "^8.18.1",
     "jsdom": "^25.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "size-limit": "^11.2.0",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",
